@@ -80,9 +80,9 @@ export default function CookStep({ bundle, go }: { bundle: Bundle } & StepProps)
       for (const task of d.tasks) {
         const plan = plans.find((x) => x.component.id === task.componentId);
         if (plan) plan.recipe.steps.forEach((step) => out.push({ day: d.label, componentId: plan.component.id, component: plan.component.name, recipeId: plan.recipe.id, step }));
+        else if (!task.componentId) out.push({ day: d.label, componentId: null, component: d.offset === 0 ? 'Finish' : 'Timing', recipeId: '', step: { text: task.text } });
       }
     }
-    out.push({ day: 'Serving day', componentId: null, component: 'Assembly', recipeId: '', step: { text: 'Layer from the bottom as shown in the cross-section, then chill before frosting.' } });
     return out;
   }, [days, plans]);
 

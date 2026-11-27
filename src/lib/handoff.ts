@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import type { Project } from './types';
 import { markIds } from './citations';
+import { promptRules } from './processRules';
 
 /**
  * Copy-prompt handoff (v1, "being cheap" edition): the app writes the prompt,
@@ -65,6 +66,8 @@ export function buildPrompt(project: Project, flavorNames: string[], componentNa
     '- Anything you estimated, scaled or changed is kind "assumption", with a "why" and the refs you compared.',
     '- Amounts in grams (g), millilitres (ml) or counts. Mark chocolate, gelatin and leaveners needsScale: true.',
     '- Temperatures in °F. makeAheadDay: 0 = serving day, -1 = day before, -2 = two days before.',
+    ...(project.variant && project.dessertType === 'cheesecake' ? [`- Cheesecake style: ${project.variant}.`] : []),
+    ...promptRules(project).map((r) => `- ${r}`),
     '',
     'Reply with ONE JSON code block and nothing else, in this shape:',
     '{"components":[{"kind":"filling","name":"Lemon curd","why":"...","makeAheadDay":-2,',

@@ -5,6 +5,7 @@ import type { Bundle } from '@/lib/repo';
 import { bakeTimeline, componentGaps, planComponents, shoppingList } from '@/lib/plan';
 import { displayAmount } from '@/lib/units';
 import { DESSERT_LABEL } from '@/lib/templates';
+import { processTips } from '@/lib/processRules';
 import { Button, Card, Chip, H1, H2, Note } from '@/components/ui';
 import { CitationKey, CitationProvider, CitedText, CrossSection, UnitToggle, useUnitPref } from '@/components/recipe';
 import { HandoffPanel, RecipeSource } from '@/components/sources';
@@ -22,6 +23,7 @@ export default function BuildStep({ bundle, go }: { bundle: Bundle } & StepProps
   const shop = shoppingList(plans);
   const days = bakeTimeline(p, bundle.components);
   const missing = included.filter((c) => !c.recipeId);
+  const tips = processTips(p);
   const pans = p.size.shape === 'sheet' ? '9×13 in sheet' : p.size.tiers.map((t) => (p.size.shape === 'cupcake' ? `${t.sizeIn} cupcakes` : `${t.sizeIn} in ${p.size.shape} × ${t.layers}`)).join(' + ');
 
   return (
@@ -53,6 +55,18 @@ export default function BuildStep({ bundle, go }: { bundle: Bundle } & StepProps
             </div>
 
             {gaps.map((g) => <Note key={g} tone="warn">{g}</Note>)}
+            {tips.length > 0 && (
+              <Card>
+                <H2>Before you start</H2>
+                <ul className="mt-1 flex flex-col gap-1">
+                  {tips.map((t) => (
+                    <li key={t.text}>
+                      {t.text} <a className="text-sm underline" href={t.source.url} target="_blank" rel="noreferrer">✓ source</a>
+                    </li>
+                  ))}
+                </ul>
+              </Card>
+            )}
             {plans.flatMap((x) => x.warnings).map((w) => <Note key={w} tone="warn">{w}</Note>)}
 
             {tab === 'recipe' && (
@@ -119,7 +133,14 @@ export default function BuildStep({ bundle, go }: { bundle: Bundle } & StepProps
                   <li key={d.offset}>
                     <Card>
                       <H2>{d.label}</H2>
-                      <ul className="mt-1 list-disc pl-5">{d.tasks.map((t) => <li key={t.text}>{t.text}</li>)}</ul>
+                      <ul className="mt-1 list-disc pl-5">
+                        {d.tasks.map((t) => (
+                          <li key={t.text}>
+                            {t.text}
+                            {t.sourceUrl && <> <a className="text-sm underline" href={t.sourceUrl} target="_blank" rel="noreferrer">✓ source</a></>}
+                          </li>
+                        ))}
+                      </ul>
                     </Card>
                   </li>
                 ))}

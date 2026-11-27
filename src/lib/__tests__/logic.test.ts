@@ -134,9 +134,9 @@ describe('recipe links', () => {
 });
 
 describe('flavors and balance', () => {
-  it('seeds 26 flavors with unique ids', () => {
-    expect(SEED_FLAVORS).toHaveLength(26);
-    expect(new Set(SEED_FLAVORS.map((f) => f.id)).size).toBe(26);
+  it('seeds 25 flavors with unique ids', () => {
+    expect(SEED_FLAVORS).toHaveLength(25);
+    expect(new Set(SEED_FLAVORS.map((f) => f.id)).size).toBe(25);
   });
   it('warns about sweet pairings on a not-too-sweet request', () => {
     const wc = SEED_FLAVORS.find((f) => f.name === 'White chocolate')!;

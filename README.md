@@ -22,7 +22,8 @@ The full data model lives in the "Cake Builder — Data Model v1" doc.
 | `src/lib/handoff.ts` | Copy-prompt builder and reply validator |
 | `src/lib/recipeLink.ts` + `src/app/api/recipe-from-link` | Reads schema.org recipe data from pasted links |
 | `src/lib/balance.ts` | Taste-profile warnings |
-| `src/lib/flavors.ts` | 26-flavor seed library |
+| `src/lib/processRules.ts` | Cheesecake (baked, no-bake, Basque) and ice cream cake timing rules, each with a source |
+| `src/lib/flavors.ts` | 25-flavor seed library |
 | `src/lib/templates.ts`, `stack.ts` | Starting components per dessert type; cross-section bands |
 | `src/lib/ingredientLine.ts` | Reads "1 ½ cups sugar" lines from links and manual entry |
 | `src/lib/bakeLog.ts` | Bake log → your note leads the recipe, guesses become tested |
