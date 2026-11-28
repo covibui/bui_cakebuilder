@@ -35,6 +35,8 @@ export interface IsoLabel {
   at: [number, number];
 }
 
+const EDGE = { stroke: 'var(--paper)', strokeWidth: 2 }; // white edge on every surface: bubbly, sticker-like
+
 export interface IsoCakeOptions {
   radius?: number; // px
   tilt?: number; // ellipse ratio (ry / rx); 0.5 = true isometric look
@@ -102,7 +104,7 @@ export function buildIsoCake(bands: IsoBand[], o: IsoCakeOptions = {}): IsoCake 
 
   // Plate and shadow.
   const plate = (r: number, y: number) => path(arc(0, 360, r, y));
-  shapes.push({ d: plate(R * 1.22, bottom + 7), fill: 'var(--espresso)', opacity: 0.1 });
+  shapes.push({ d: plate(R * 1.22, bottom + 7), fill: 'var(--espresso)', opacity: 0.06 });
   shapes.push({ d: plate(R * 1.18, bottom + 3), fill: 'var(--latte)' });
   shapes.push({ d: plate(R * 1.18, bottom), fill: 'var(--paper)' });
 
@@ -115,21 +117,22 @@ export function buildIsoCake(bands: IsoBand[], o: IsoCakeOptions = {}): IsoCake 
   for (const [t1, t2] of sideRanges) {
     if (t2 <= t1) continue;
     if (frosted) {
-      shapes.push({ d: side(t1, t2, 0, H), fill: coatFill });
+      shapes.push({ d: side(t1, t2, 0, H), fill: coatFill, ...EDGE });
       overlay(side(t1, t2, 0, H), rows[0].pattern, 'side');
     } else {
       rows.forEach((row) => {
-        shapes.push({ d: side(t1, t2, row.a, row.b), fill: row.fill });
+        shapes.push({ d: side(t1, t2, row.a, row.b), fill: row.fill, ...EDGE });
         overlay(side(t1, t2, row.a, row.b), row.pattern, 'side');
       });
     }
-    // Flat shading: one tone per side (left lit, right in shade).
-    shapes.push({ d: side(t1, t2, 0, H), fill: 'var(--espresso)', opacity: t1 < 90 ? 0.16 : 0.06 });
+    // Light, never shadow: dark overlays muddy pastels. The left side catches a white highlight.
+    if (t1 >= 90) shapes.push({ d: side(t1, t2, 0, H), fill: 'var(--paper)', opacity: 0.12 });
   }
   // Top surface: the full disc minus the cut wedge.
   const topFill = rows[0]?.fill ?? 'var(--cake-vanilla)';
   const topD = path([[cx, top], ...arc(tL, tR + 360, R, top)]);
-  shapes.push({ d: topD, fill: topFill });
+  shapes.push({ d: topD, fill: topFill, ...EDGE });
+  shapes.push({ d: topD, fill: 'var(--paper)', opacity: 0.14 }); // top catches the most light
   overlay(topD, rows[0]?.pattern, 'top');
 
   // Cut faces: strips from the center line out to the rim.
@@ -138,27 +141,22 @@ export function buildIsoCake(bands: IsoBand[], o: IsoCakeOptions = {}): IsoCake 
     return path([p0, p1, p2, p3]);
   };
   for (const [t, dark] of [
-    [tL, 0],
-    [tR, 0.1],
+    [tL, 0.08],
+    [tR, 0],
   ] as [number, number][]) {
     const plane: IsoPlane = t === tL ? 'left' : 'right';
     rows.forEach((row, i) => {
       const full = frosted && i === 0; // top frosting runs to the rim
       const d = face(t, 0, full ? R : R - coat, row.a, row.b);
-      shapes.push({ d, fill: row.fill, bandId: row.id });
+      shapes.push({ d, fill: row.fill, bandId: row.id, ...EDGE });
       overlay(d, row.pattern, plane);
     });
     if (frosted) {
       const d = face(t, R - coat, R, rows[0].b, H);
-      shapes.push({ d, fill: coatFill, bandId: rows[0].id });
+      shapes.push({ d, fill: coatFill, bandId: rows[0].id, ...EDGE });
       overlay(d, rows[0].pattern, plane);
     }
-    if (dark) shapes.push({ d: face(t, 0, R, 0, H), fill: 'var(--espresso)', opacity: dark });
-    // Thin seams between layers.
-    rows.slice(1).forEach((row) => {
-      const [x0, y0] = rim(t, 0, top + row.a), [x1, y1] = rim(t, frosted ? R - coat : R, top + row.a);
-      shapes.push({ d: `M${P(x0)},${P(y0)} L${P(x1)},${P(y1)}`, fill: 'none', stroke: 'var(--espresso)', strokeWidth: 0.5, opacity: 0.25 });
-    });
+    if (dark) shapes.push({ d: face(t, 0, R, 0, H), fill: 'var(--paper)', opacity: dark }); // lit face
   }
 
   // Highlight the selected layer on both faces.
@@ -175,7 +173,7 @@ export function buildIsoCake(bands: IsoBand[], o: IsoCakeOptions = {}): IsoCake 
   }
 
   // Center line where the faces meet.
-  shapes.push({ d: `M${P(cx)},${P(top)} L${P(cx)},${P(bottom)}`, fill: 'none', stroke: 'var(--espresso)', strokeWidth: 0.75, opacity: 0.35 });
+  shapes.push({ d: `M${P(cx)},${P(top)} L${P(cx)},${P(bottom)}`, fill: 'none', stroke: 'var(--paper)', strokeWidth: 2 });
 
   // Labels: one per component, pointing at its first layer on the right face.
   if (withLabels) {
@@ -271,25 +269,25 @@ export function buildIsoSlice(bands: IsoBand[], o: { width?: number; depth?: num
   const coat = frosted ? Math.min(9, Math.max(4, rows[0].b - rows[0].a)) : 0;
 
   // Shadow
-  shapes.push({ d: path([[x0 + 6, top + H + 4], [x0 + w + 6, top + H + 4], [x0 + w + dx + 6, top + H + 4 - dy], [x0 + dx + 6, top + H + 4 - dy]]), fill: 'var(--espresso)', opacity: 0.08 });
+  shapes.push({ d: path([[x0 + 6, top + H + 4], [x0 + w + 6, top + H + 4], [x0 + w + dx + 6, top + H + 4 - dy], [x0 + dx + 6, top + H + 4 - dy]]), fill: 'var(--espresso)', opacity: 0.06 });
   // Outer end (right side): frosting coat, or the layers if naked.
   const sideStrip = (a: number, b: number) => path([[x0 + w, top + a], [x0 + w + dx, top + a - dy], [x0 + w + dx, top + b - dy], [x0 + w, top + b]]);
   const overlay = (d: string, type: IsoPattern | undefined, plane: IsoPlane) => {
     if (type && type !== 'none') shapes.push({ d, fill: 'none', pattern: { type, plane } });
   };
-  if (frosted) { shapes.push({ d: sideStrip(0, H), fill: rows[0].fill }); overlay(sideStrip(0, H), rows[0].pattern, 'sliceSide'); }
-  else rows.forEach((r) => { shapes.push({ d: sideStrip(r.a, r.b), fill: r.fill }); overlay(sideStrip(r.a, r.b), r.pattern, 'sliceSide'); });
-  shapes.push({ d: sideStrip(0, H), fill: 'var(--espresso)', opacity: 0.14 });
+  if (frosted) { shapes.push({ d: sideStrip(0, H), fill: rows[0].fill, ...EDGE }); overlay(sideStrip(0, H), rows[0].pattern, 'sliceSide'); }
+  else rows.forEach((r) => { shapes.push({ d: sideStrip(r.a, r.b), fill: r.fill, ...EDGE }); overlay(sideStrip(r.a, r.b), r.pattern, 'sliceSide'); });
   // Top
   const sliceTop = path([[x0, top], [x0 + w, top], [x0 + w + dx, top - dy], [x0 + dx, top - dy]]);
-  shapes.push({ d: sliceTop, fill: rows[0]?.fill ?? 'var(--cake-vanilla)' });
+  shapes.push({ d: sliceTop, fill: rows[0]?.fill ?? 'var(--cake-vanilla)', ...EDGE });
+  shapes.push({ d: sliceTop, fill: 'var(--paper)', opacity: 0.14 });
   overlay(sliceTop, rows[0]?.pattern, 'sliceTop');
   // Front face: layers, with the frosting coat at the outer (right) end.
   rows.forEach((r, i) => {
     const full = frosted && i === 0;
     const xr = full ? x0 + w : x0 + w - coat;
     const fd = path([[x0, top + r.a], [xr, top + r.a], [xr, top + r.b], [x0, top + r.b]]);
-    shapes.push({ d: fd, fill: r.fill, bandId: r.id });
+    shapes.push({ d: fd, fill: r.fill, bandId: r.id, ...EDGE });
     overlay(fd, r.pattern, 'front');
     if (o.highlight === r.id) {
       const d = path([[x0, top + r.a], [xr, top + r.a], [xr, top + r.b], [x0, top + r.b]]);
@@ -299,10 +297,9 @@ export function buildIsoSlice(bands: IsoBand[], o: { width?: number; depth?: num
   });
   if (frosted) {
     const cd = path([[x0 + w - coat, top + rows[0].b], [x0 + w, top + rows[0].b], [x0 + w, top + H], [x0 + w - coat, top + H]]);
-    shapes.push({ d: cd, fill: rows[0].fill });
+    shapes.push({ d: cd, fill: rows[0].fill, ...EDGE });
     overlay(cd, rows[0].pattern, 'front');
   }
-  rows.slice(1).forEach((r) => shapes.push({ d: `M${P(x0)},${P(top + r.a)} L${P(x0 + w - coat)},${P(top + r.a)}`, fill: 'none', stroke: 'var(--espresso)', strokeWidth: 0.5, opacity: 0.25 }));
 
   if (withLabels) {
     const seen = new Set<string>();
