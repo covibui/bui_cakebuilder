@@ -1,40 +1,40 @@
 import type { ComponentKind, DessertType } from './types';
 
 /**
- * Cake palette from the Café Scrapbook design system (cake-* tokens): bright pastels (2026-11-28).
+ * Cake palette from the Café Scrapbook design system (cake-* tokens).
  * These colors only draw cake: cross-section layers, saved-cake minis, flavor chips. Never UI.
  * `ink` is the label color that passes 4.5:1 on that swatch.
  */
 export const CAKE_COLORS = {
-  'cake-vanilla': { hex: '#FAEBCB', ink: 'espresso', group: 'sponge' },
-  'cake-golden': { hex: '#F4D79B', ink: 'espresso', group: 'sponge' },
-  'cake-spice': { hex: '#DDB08C', ink: 'espresso', group: 'sponge' },
-  'cake-red-velvet': { hex: '#E39A9E', ink: 'espresso', group: 'sponge' },
-  'cake-chocolate': { hex: '#8E6655', ink: 'milk', group: 'sponge' },
-  'cake-cookie': { hex: '#6E6461', ink: 'milk', group: 'sponge' },
-  'cake-matcha': { hex: '#C9DFA0', ink: 'espresso', group: 'sponge' },
-  'cake-pistachio': { hex: '#DDE7B3', ink: 'espresso', group: 'sponge' },
-  'cake-earl-grey': { hex: '#E0D3C4', ink: 'espresso', group: 'sponge' },
-  'cake-strawberry': { hex: '#F7B8C1', ink: 'espresso', group: 'fruit' },
-  'cake-raspberry': { hex: '#EE9FB1', ink: 'espresso', group: 'fruit' },
-  'cake-cherry': { hex: '#E48D9F', ink: 'espresso', group: 'fruit' },
-  'cake-blueberry': { hex: '#AEB4E6', ink: 'espresso', group: 'fruit' },
-  'cake-lemon': { hex: '#FBE79A', ink: 'espresso', group: 'fruit' },
-  'cake-lime': { hex: '#D9EC9C', ink: 'espresso', group: 'fruit' },
-  'cake-mango': { hex: '#F9C98C', ink: 'espresso', group: 'fruit' },
+  'cake-vanilla': { hex: '#F3DDB0', ink: 'espresso', group: 'sponge' },
+  'cake-golden': { hex: '#E6BF73', ink: 'espresso', group: 'sponge' },
+  'cake-spice': { hex: '#94603A', ink: 'milk', group: 'sponge' },
+  'cake-red-velvet': { hex: '#A8383F', ink: 'milk', group: 'sponge' },
+  'cake-chocolate': { hex: '#6B4434', ink: 'milk', group: 'sponge' },
+  'cake-cookie': { hex: '#2E2826', ink: 'milk', group: 'sponge' },
+  'cake-matcha': { hex: '#9DB46A', ink: 'espresso', group: 'sponge' },
+  'cake-pistachio': { hex: '#C3CC8C', ink: 'espresso', group: 'sponge' },
+  'cake-earl-grey': { hex: '#C8B8A6', ink: 'espresso', group: 'sponge' },
+  'cake-strawberry': { hex: '#EE8C98', ink: 'espresso', group: 'fruit' },
+  'cake-raspberry': { hex: '#C2405A', ink: 'milk', group: 'fruit' },
+  'cake-cherry': { hex: '#8A2638', ink: 'milk', group: 'fruit' },
+  'cake-blueberry': { hex: '#5B5E9E', ink: 'milk', group: 'fruit' },
+  'cake-lemon': { hex: '#F3D65E', ink: 'espresso', group: 'fruit' },
+  'cake-lime': { hex: '#B8D05A', ink: 'espresso', group: 'fruit' },
+  'cake-mango': { hex: '#F2A23A', ink: 'espresso', group: 'fruit' },
   'cake-meringue': { hex: '#FFFDF8', ink: 'espresso', group: 'cream' },
   'cake-buttercream': { hex: '#F8EBD0', ink: 'espresso', group: 'cream' },
   'cake-cream-cheese': { hex: '#F3EDE1', ink: 'espresso', group: 'cream' },
-  'cake-custard': { hex: '#F8E3A3', ink: 'espresso', group: 'cream' },
-  'cake-caramel': { hex: '#E9C28F', ink: 'espresso', group: 'cream' },
-  'cake-mocha': { hex: '#C9A491', ink: 'espresso', group: 'cream' },
-  'cake-ganache': { hex: '#7A5246', ink: 'milk', group: 'cream' },
-  'cake-pistachio-cream': { hex: '#E5EDC4', ink: 'espresso', group: 'cream' },
-  'cake-graham': { hex: '#E3C49C', ink: 'espresso', group: 'crust' },
-  'cake-pastry': { hex: '#F2DDB4', ink: 'espresso', group: 'crust' },
-  'cake-praline': { hex: '#C9996B', ink: 'espresso', group: 'crust' },
-  'cake-kataifi': { hex: '#EFCF98', ink: 'espresso', group: 'crust' },
-  'cake-basque-top': { hex: '#8C5E4A', ink: 'milk', group: 'crust' },
+  'cake-custard': { hex: '#F2D88A', ink: 'espresso', group: 'cream' },
+  'cake-caramel': { hex: '#D6A061', ink: 'espresso', group: 'cream' },
+  'cake-mocha': { hex: '#7E5A48', ink: 'milk', group: 'cream' },
+  'cake-ganache': { hex: '#3B2420', ink: 'milk', group: 'cream' },
+  'cake-pistachio-cream': { hex: '#D4DDA8', ink: 'espresso', group: 'cream' },
+  'cake-graham': { hex: '#C9995F', ink: 'espresso', group: 'crust' },
+  'cake-pastry': { hex: '#E4C38C', ink: 'espresso', group: 'crust' },
+  'cake-praline': { hex: '#8A5A2E', ink: 'milk', group: 'crust' },
+  'cake-kataifi': { hex: '#D8A55A', ink: 'espresso', group: 'crust' },
+  'cake-basque-top': { hex: '#5A3220', ink: 'milk', group: 'crust' },
 } as const satisfies Record<string, { hex: string; ink: 'espresso' | 'milk'; group: 'sponge' | 'fruit' | 'cream' | 'crust' }>;
 
 export type CakeColor = keyof typeof CAKE_COLORS;

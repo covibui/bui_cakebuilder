@@ -55,6 +55,25 @@ export interface IsoCake {
 }
 
 const P = (n: number) => Math.round(n * 10) / 10;
+const CORNER = 6; // px: soft corners on every surface, so the cake reads as bubbly UI, not a hard 3D model
+
+/** Closed path with each corner rounded (radius capped at half of each neighboring edge, so arcs stay smooth). */
+function roundedPath(pts: [number, number][], r: number): string {
+  const n = pts.length;
+  if (n < 3 || r <= 0) return 'M' + pts.map(([x, y]) => `${P(x)},${P(y)}`).join(' L') + ' Z';
+  const cut = (a: [number, number], b: [number, number]): [number, number] => {
+    const dx = b[0] - a[0], dy = b[1] - a[1], len = Math.hypot(dx, dy) || 1;
+    const t = Math.min(r, len / 2) / len;
+    return [a[0] + dx * t, a[1] + dy * t];
+  };
+  let d = '';
+  for (let i = 0; i < n; i++) {
+    const prev = pts[(i - 1 + n) % n], cur = pts[i], next = pts[(i + 1) % n];
+    const a = cut(cur, prev), b = cut(cur, next);
+    d += `${i ? ' L' : 'M'}${P(a[0])},${P(a[1])} Q${P(cur[0])},${P(cur[1])} ${P(b[0])},${P(b[1])}`;
+  }
+  return d + ' Z';
+}
 const rad = (deg: number) => (deg * Math.PI) / 180;
 
 export function buildIsoCake(bands: IsoBand[], o: IsoCakeOptions = {}): IsoCake {
@@ -82,7 +101,7 @@ export function buildIsoCake(bands: IsoBand[], o: IsoCakeOptions = {}): IsoCake 
     const n = Math.max(2, Math.ceil(Math.abs(t2 - t1) / 4));
     return Array.from({ length: n + 1 }, (_, i) => rim(t1 + ((t2 - t1) * i) / n, r, y));
   };
-  const path = (pts: [number, number][]) => 'M' + pts.map(([x, y]) => `${P(x)},${P(y)}`).join(' L') + ' Z';
+  const path = (pts: [number, number][]) => roundedPath(pts, CORNER);
 
   const tR = 90 - cut / 2; // right cut face
   const tL = 90 + cut / 2; // left cut face
@@ -261,7 +280,7 @@ export function buildIsoSlice(bands: IsoBand[], o: { width?: number; depth?: num
   const x0 = pad, top = pad + dy;
   const shapes: IsoShape[] = [];
   const labels: IsoLabel[] = [];
-  const path = (pts: [number, number][]) => 'M' + pts.map(([x, y]) => `${P(x)},${P(y)}`).join(' L') + ' Z';
+  const path = (pts: [number, number][]) => roundedPath(pts, CORNER);
 
   let acc = 0;
   const rows = bands.map((b) => { const a = acc; acc += b.height * scale; return { ...b, a, b: acc }; });
