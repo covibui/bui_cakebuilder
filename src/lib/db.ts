@@ -1,6 +1,7 @@
 import Dexie, { type EntityTable } from 'dexie';
 import type { BakeLog, Citation, Component, Flavor, Layer, Project, Recipe } from './types';
 import { SEED_FLAVORS } from './flavors';
+import { flavorColor } from './cakeColors';
 
 /** Device-only storage (IndexedDB). Built so cloud sync can be added later. */
 export class CakeDB extends Dexie {
@@ -23,6 +24,12 @@ export class CakeDB extends Dexie {
       bakeLogs: 'id, projectId, bakedOn',
       flavors: 'id, name, category, origin',
     });
+    // v2: flavors gain a cake color (Café Scrapbook cake palette).
+    this.version(2).stores({}).upgrade((tx) =>
+      tx.table('flavors').toCollection().modify((f: Flavor) => {
+        if (!f.color) f.color = flavorColor(f.name, f.category);
+      }),
+    );
     this.on('populate', (tx) => {
       tx.table('flavors').bulkAdd(SEED_FLAVORS);
     });

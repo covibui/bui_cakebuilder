@@ -1,10 +1,12 @@
 import type { Component, ComponentKind, Size } from './types';
+import { closestCakeColor, type CakeColor } from './cakeColors';
 
 export interface Band {
   componentId: string;
   kind: ComponentKind;
   label: string;
   height: number; // display px at scale 1
+  color: CakeColor;
 }
 
 const HEIGHT: Record<ComponentKind, number> = {
@@ -23,7 +25,7 @@ const BETWEEN: ComponentKind[] = ['soak', 'filling', 'insert', 'crunch', 'other'
 export function crossSection(components: Component[], size: Size, tier = 0): Band[] {
   const on = components.filter((c) => c.included);
   const of = (k: ComponentKind) => on.filter((c) => c.kind === k);
-  const band = (c: Component): Band => ({ componentId: c.id, kind: c.kind, label: c.name, height: HEIGHT[c.kind] });
+  const band = (c: Component): Band => ({ componentId: c.id, kind: c.kind, label: c.name, height: HEIGHT[c.kind], color: closestCakeColor(c.name, c.kind) });
   const out: Band[] = [];
   ['glaze', 'topping', 'frosting'].forEach((k) => of(k as ComponentKind).forEach((c) => out.push(band(c))));
   const mousse = of('mousse');
@@ -59,8 +61,8 @@ export function rollSpiral(components: Component[], turns = 3): Band[] {
   if (!sponge) return [];
   const out: Band[] = [];
   for (let i = 0; i < turns; i++) {
-    out.push({ componentId: sponge.id, kind: 'sponge', label: sponge.name, height: HEIGHT.sponge });
-    fills.forEach((c) => out.push({ componentId: c.id, kind: c.kind, label: c.name, height: HEIGHT[c.kind] }));
+    out.push({ componentId: sponge.id, kind: 'sponge', label: sponge.name, height: HEIGHT.sponge, color: closestCakeColor(sponge.name, 'sponge') });
+    fills.forEach((c) => out.push({ componentId: c.id, kind: c.kind, label: c.name, height: HEIGHT[c.kind], color: closestCakeColor(c.name, c.kind) }));
   }
   return out;
 }

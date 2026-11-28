@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { flavorColor } from '@/lib/cakeColors';
 import type { Bundle } from '@/lib/repo';
 import { deriveTitle, resetComponents, saveProject, useFlavors } from '@/lib/repo';
 import { db, newId } from '@/lib/db';
@@ -47,6 +48,7 @@ export default function FlavorStep({ bundle, go }: { bundle: Bundle } & StepProp
       await db().flavors.add({
         id: `custom-${newId()}`, name, category: p.dessertType, pairsWith: [], profile: { sweet: 0, salty: 0, sour: 0, bitter: 0, umami: 0 },
         profileIsAssumed: true, watchOut: 'Not researched yet', origin: 'custom', sources: [],
+        color: flavorColor(name, p.dessertType), // closest existing cake color until researched
       });
     }
     if (!p.flavors.custom.includes(name)) await save({ ...p, flavors: { ...p.flavors, custom: [...p.flavors.custom, name] } });
