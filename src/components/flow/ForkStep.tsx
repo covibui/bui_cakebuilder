@@ -3,7 +3,8 @@
 import type { Bundle } from '@/lib/repo';
 import { db } from '@/lib/db';
 import { deriveTitle, saveProject, useFlavors } from '@/lib/repo';
-import type { BuildMode, DessertType } from '@/lib/types';
+import type { BuildMode, CakeStyle, DessertType, Project, Variant } from '@/lib/types';
+import { STYLES, defaultSize, styleOf } from '@/lib/styles';
 import { DESSERT_LABEL } from '@/lib/templates';
 import { Card, Chip, H1, H2 } from '@/components/ui';
 import type { StepProps } from './ProjectFlow';
@@ -18,10 +19,19 @@ export default function ForkStep({ bundle, go }: { bundle: Bundle } & StepProps)
   const p = bundle.project;
   const flavors = useFlavors() ?? [];
 
+  const withPan = (next: Project): Project =>
+    next.dessertType === 'cake' ? { ...next, size: { ...next.size, ...defaultSize(styleOf(next) as CakeStyle, next.request.servings) } } : next;
+
   const setType = (dessertType: DessertType) => {
-    const next = { ...p, dessertType };
+    const next = withPan({ ...p, dessertType, variant: undefined });
     return saveProject({ ...next, title: p.titleIsCustom ? p.title : deriveTitle(next, flavors) });
   };
+
+  const setStyle = (variant: Variant) => {
+    const next = withPan({ ...p, variant });
+    return saveProject({ ...next, title: p.titleIsCustom ? p.title : deriveTitle(next, flavors) });
+  };
+  const styles = STYLES[p.dessertType];
 
   const pick = async (buildMode: BuildMode) => {
     await saveProject({ ...p, buildMode });
@@ -41,12 +51,12 @@ export default function ForkStep({ bundle, go }: { bundle: Bundle } & StepProps)
             <Chip key={t} on={p.dessertType === t} onClick={() => setType(t)}>{DESSERT_LABEL[t]}</Chip>
           ))}
         </div>
-        {p.dessertType === 'cheesecake' && (
+        {styles && (
           <div className="flex flex-col gap-2">
             <H2>What style?</H2>
             <div className="flex flex-wrap gap-2">
-              {([['baked', 'Baked (New York)'], ['no-bake', 'No-bake'], ['basque', 'Basque (burnt)']] as const).map(([v, l]) => (
-                <Chip key={v} on={(p.variant ?? 'baked') === v} onClick={() => saveProject({ ...p, variant: v })}>{l}</Chip>
+              {styles.map(([v, l]) => (
+                <Chip key={v} on={styleOf(p) === v} onClick={() => setStyle(v)}>{l}</Chip>
               ))}
             </div>
           </div>

@@ -1,6 +1,7 @@
 import type { Component, Ingredient, Project, Recipe } from './types';
 import { roundAmount, scaleFactor } from './scaling';
 import { assemblyText, processTasks } from './processRules';
+import { cakeStyle } from './styles';
 
 export interface ScaledIngredient extends Ingredient {
   scaled: number;
@@ -102,7 +103,7 @@ export function componentGaps(project: Project, components: Component[]): string
   const on = components.filter((c) => c.included);
   const has = (k: Component['kind']) => on.some((c) => c.kind === k);
   const gaps: string[] = [];
-  if (project.dessertType === 'cake') {
+  if (cakeStyle(project) === 'layer') {
     if (!has('sponge') && !has('base')) gaps.push('No base layer. Add a sponge or choose a cheesecake or tart.');
     if (has('sponge') && !has('soak') && !has('filling') && !has('insert')) gaps.push('No soak, filling or insert. Sponge-only layers can taste dry.');
   }

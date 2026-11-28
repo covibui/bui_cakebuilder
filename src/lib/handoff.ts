@@ -1,3 +1,4 @@
+import { styleOf } from './styles';
 import { z } from 'zod';
 import type { Project } from './types';
 import { markIds } from './citations';
@@ -38,7 +39,7 @@ const ComponentReply = z.object({
   makeAheadDay: z.number().int().min(-7).max(0),
   recipe: z.object({
     basePan: z.object({
-      shape: z.enum(['round', 'square', 'sheet', 'oval', 'dome', 'cupcake']),
+      shape: z.enum(['round', 'square', 'sheet', 'oval', 'dome', 'cupcake', 'tube', 'bundt', 'jelly-roll', 'ring']),
       sizeIn: z.number().positive(),
       layers: z.number().int().positive(),
     }),
@@ -65,8 +66,8 @@ export function buildPrompt(project: Project, flavorNames: string[], componentNa
     '- Use kind "source" only when it comes straight from a published recipe by a person, and give its url.',
     '- Anything you estimated, scaled or changed is kind "assumption", with a "why" and the refs you compared.',
     '- Amounts in grams (g), millilitres (ml) or counts. Mark chocolate, gelatin and leaveners needsScale: true.',
-    '- Temperatures in °F. makeAheadDay: 0 = serving day, -1 = day before, -2 = two days before.',
-    ...(project.variant && project.dessertType === 'cheesecake' ? [`- Cheesecake style: ${project.variant}.`] : []),
+    '- Temperatures in °F. makeAheadDay: 0 = serving day, -1 = day before, -2 = two days before, -3 = three days before.',
+    ...(styleOf(project) ? [`- Style: ${styleOf(project)} ${project.dessertType.replace(/-/g, ' ')}.`] : []),
     ...promptRules(project).map((r) => `- ${r}`),
     '',
     'Reply with ONE JSON code block and nothing else, in this shape:',

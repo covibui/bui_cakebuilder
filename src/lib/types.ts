@@ -22,7 +22,22 @@ export interface FlavorPick {
   custom: string[]; // "fill in your own" — researched, then added to the library
 }
 
-export type Shape = 'round' | 'square' | 'sheet' | 'oval' | 'dome' | 'cupcake';
+export type Shape =
+  | 'round'
+  | 'square'
+  | 'sheet'
+  | 'oval'
+  | 'dome'
+  | 'cupcake'
+  | 'tube' // chiffon and angel food: ungreased, straight-sided, with a center tube
+  | 'bundt' // fluted tube pan; sizeIn = diameter
+  | 'jelly-roll' // 10×15 in rimmed pan for roll cakes
+  | 'ring'; // entremet ring or silicone mold; scales like round
+
+export type CheesecakeStyle = 'baked' | 'no-bake' | 'basque';
+export type CakeStyle = 'layer' | 'entremet' | 'cupcake' | 'bundt' | 'chiffon' | 'angel-food' | 'roll';
+export type TartStyle = 'set' | 'baked';
+export type Variant = CheesecakeStyle | CakeStyle | TartStyle;
 
 export interface Tier {
   sizeIn: number; // diameter or side, inches; sheet uses 9x13 by default
@@ -42,8 +57,11 @@ export interface Project {
   dessertType: DessertType;
   status: ProjectStatus;
   buildMode: BuildMode;
-  /** Cheesecake style; drives water bath, set and chill rules. Unset = baked. */
-  variant?: 'baked' | 'no-bake' | 'basque';
+  /**
+   * Style within the dessert type; drives pans, templates and process rules.
+   * Cake: unset = layer. Cheesecake: unset = baked. Tart: unset = set (filling goes in a baked shell).
+   */
+  variant?: Variant;
   request: Request;
   flavors: FlavorPick;
   size: Size;
@@ -60,6 +78,9 @@ export type ComponentKind =
   | 'crunch'
   | 'crust'
   | 'base'
+  | 'mousse' // entremet body
+  | 'glaze' // mirror glaze, Bundt glaze, tart nappage
+  | 'topping' // meringue, whipped cream, fresh fruit
   | 'other';
 
 export type ComponentTag = 'base' | 'suggested' | 'from-request' | 'optional' | 'mine';
@@ -78,7 +99,7 @@ export interface Component {
   why: string; // why it was suggested
   tag: ComponentTag;
   included: boolean;
-  makeAheadDay: number; // 0 = serving day, -1 = day before, -2 = two days before
+  makeAheadDay: number; // 0 = serving day, -1 = day before, -2 and -3 for entremet
   recipeId: ID | null;
   feeds: Feed[];
 }
