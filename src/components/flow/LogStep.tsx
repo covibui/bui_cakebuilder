@@ -5,7 +5,9 @@ import type { Bundle } from '@/lib/repo';
 import { saveBakeLog } from '@/lib/repo';
 import { newId } from '@/lib/db';
 import type { BakeLog, Verdict } from '@/lib/types';
-import { Button, Card, Chip, Field, H1, H2, Input, TextArea } from '@/components/ui';
+import { Button, Card, Chip, Field, H1, H2, Input, TextArea, NextRow } from '@/components/ui';
+import { closestCakeColor } from '@/lib/cakeColors';
+import { Mark } from '@/components/recipe';
 import type { StepProps } from './ProjectFlow';
 
 export default function LogStep({ bundle, go, onSaved }: { bundle: Bundle; onSaved: (s: string[]) => void } & StepProps) {
@@ -37,8 +39,11 @@ export default function LogStep({ bundle, go, onSaved }: { bundle: Bundle; onSav
   };
 
   return (
-    <section className="flex max-w-2xl flex-col gap-6">
-      <H1>How did it go?</H1>
+    <section className="mx-auto flex w-full max-w-2xl flex-col gap-6">
+      <div className="flex flex-col gap-1">
+        <H1>How did it go?</H1>
+        <p className="text-espresso-muted">One save updates the recipes for next time.</p>
+      </div>
       <Field label="Baked on"><Input type="date" value={bakedOn} onChange={(e) => setBakedOn(e.target.value)} className="w-48" /></Field>
 
       <div className="flex flex-col gap-3">
@@ -49,7 +54,10 @@ export default function LogStep({ bundle, go, onSaved }: { bundle: Bundle; onSav
           return (
             <Card key={c.id} className="flex flex-col gap-2">
               <div className="flex flex-wrap items-center justify-between gap-2">
-                <b>{c.name}</b>
+                <span className="flex items-center gap-3">
+                  <span aria-hidden className="h-6 w-2.5 rounded-pill" style={{ background: `var(--${closestCakeColor(c.name, c.kind)})` }} />
+                  <b>{c.name}</b>
+                </span>
                 <div className="flex gap-2">
                   <Chip on={v?.verdict === 'worked'} onClick={() => setV('worked')}>Worked</Chip>
                   <Chip on={v?.verdict === 'change'} onClick={() => setV('change')}>Change it</Chip>
@@ -64,9 +72,8 @@ export default function LogStep({ bundle, go, onSaved }: { bundle: Bundle; onSav
       </div>
 
       {assumptions.length > 0 && (
-        <div className="flex flex-col gap-3">
-          <H2>Check the guesses</H2>
-          <p className="text-neutral-600">Fill in what you actually saw. It replaces the guess next time.</p>
+        <Card tape="latte" label="Check the guesses" className="flex flex-col gap-3">
+          <p className="text-espresso-muted">Fill in what you actually saw. It replaces the guess (<Mark kind="assumption" />) with a tested mark (<Mark kind="tested" />) next time.</p>
           {assumptions.map(({ comp, cite }) => {
             const key = `${cite.recipeId}|${cite.id}`;
             return (
@@ -75,11 +82,13 @@ export default function LogStep({ bundle, go, onSaved }: { bundle: Bundle; onSav
               </Field>
             );
           })}
-        </div>
+        </Card>
       )}
 
       <Field label="Notes"><TextArea rows={3} value={notes} onChange={(e) => setNotes(e.target.value)} /></Field>
-      <div><Button primary onClick={save}>{Object.keys(verdicts).length || Object.keys(measured).length ? 'Save to the recipe' : 'Nothing to change? Just save'}</Button></div>
+      <NextRow hint="Next: a summary of what changed.">
+        <Button primary onClick={save}>{Object.keys(verdicts).length || Object.keys(measured).length ? 'Save to the recipe' : 'Nothing to change? Just save'}</Button>
+      </NextRow>
     </section>
   );
 }

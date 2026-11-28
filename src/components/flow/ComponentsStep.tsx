@@ -6,7 +6,8 @@ import { addComponent, removeComponent, resetComponents, saveComponent, useFlavo
 import { componentGaps } from '@/lib/plan';
 import { KIND_LABEL } from '@/lib/templates';
 import type { Component, ComponentKind } from '@/lib/types';
-import { Button, Card, H1, Input, Note } from '@/components/ui';
+import { Button, Card, H1, Input, NextRow, Note, Select, Tag } from '@/components/ui';
+import { closestCakeColor } from '@/lib/cakeColors';
 import type { StepProps } from './ProjectFlow';
 
 const TAG = { base: 'Base', suggested: 'Suggested', 'from-request': 'From request', optional: 'Optional', mine: 'Yours' } as const;
@@ -27,26 +28,29 @@ export default function ComponentsStep({ bundle, go }: { bundle: Bundle } & Step
 
   return (
     <section className="flex flex-col gap-6">
-      <H1>What goes inside</H1>
-      <p className="text-neutral-600">Suggested from your flavors. Turn parts on or off, rename them, and say when each gets made.</p>
+      <div className="flex flex-col gap-1">
+        <H1>What goes inside</H1>
+        <p className="text-espresso-muted">Suggested from your flavors. Turn parts on or off, rename them, and say when each gets made.</p>
+      </div>
 
       <ul className="flex flex-col gap-3">
         {comps.map((c) => (
           <li key={c.id}>
-            <Card className={c.included ? 'border-neutral-800' : ''}>
+            <Card className={c.included ? '' : 'opacity-70'}>
               <div className="flex flex-wrap items-start gap-3">
-                <input type="checkbox" className="mt-3 h-5 w-5" checked={c.included} onChange={() => set(c, { included: !c.included })} aria-label={`Include ${c.name}`} />
+                <input type="checkbox" className="mt-3 h-5 w-5 accent-ribbon" checked={c.included} onChange={() => set(c, { included: !c.included })} aria-label={`Include ${c.name}`} />
+                <span aria-hidden className="mt-2 h-7 w-3 shrink-0 rounded-pill shadow-[inset_0_0_0_1px_rgba(74,52,44,.15)]" style={{ background: `var(--${closestCakeColor(c.name, c.kind)})` }} />
                 <div className="flex min-w-60 flex-1 flex-col gap-1">
-                  <Input value={c.name} onChange={(e) => set(c, { name: e.target.value })} aria-label="Component name" />
-                  <p className="text-sm text-neutral-600">{TAG[c.tag]} · {c.why}</p>
+                  <Input value={c.name} onChange={(e) => set(c, { name: e.target.value })} aria-label="Component name" className="font-bold" />
+                  <p className="flex flex-wrap items-center gap-2 text-sm text-espresso-muted"><Tag tone={c.tag === 'base' ? 'pistachio' : c.tag === 'optional' ? 'butter' : 'rose'}>{TAG[c.tag]}</Tag>{c.why}</p>
                 </div>
-                <select className="min-h-11 rounded-lg border-2 border-neutral-400 px-2" value={c.kind} onChange={(e) => set(c, { kind: e.target.value as ComponentKind })} aria-label="Kind">
+                <Select value={c.kind} onChange={(e) => set(c, { kind: e.target.value as ComponentKind })} aria-label="Kind">
                   {Object.entries(KIND_LABEL).map(([k, l]) => <option key={k} value={k}>{l}</option>)}
-                </select>
-                <select className="min-h-11 rounded-lg border-2 border-neutral-400 px-2" value={c.makeAheadDay} onChange={(e) => set(c, { makeAheadDay: Number(e.target.value) })} aria-label="When to make it">
+                </Select>
+                <Select value={c.makeAheadDay} onChange={(e) => set(c, { makeAheadDay: Number(e.target.value) })} aria-label="When to make it">
                   {DAYS.map(([d, l]) => <option key={d} value={d}>{l}</option>)}
-                </select>
-                {c.tag === 'mine' && <Button onClick={() => removeComponent(c.id)} aria-label={`Remove ${c.name}`}>Remove</Button>}
+                </Select>
+                {c.tag === 'mine' && <Button small onClick={() => removeComponent(c.id)} aria-label={`Remove ${c.name}`}>Remove</Button>}
               </div>
               {c.included && comps.filter((o) => o.id !== c.id && o.included).length > 0 && (
                 <details className="mt-3">
@@ -57,7 +61,7 @@ export default function ComponentsStep({ bundle, go }: { bundle: Bundle } & Step
                       return (
                         <div key={o.id} className="flex flex-wrap items-center gap-2">
                           <label className="flex items-center gap-2">
-                            <input type="checkbox" className="h-5 w-5" checked={!!feed} onChange={() => toggleFeed(c, o.id)} />
+                            <input type="checkbox" className="h-5 w-5 accent-ribbon" checked={!!feed} onChange={() => toggleFeed(c, o.id)} />
                             {o.name}
                           </label>
                           {feed && (
@@ -78,16 +82,16 @@ export default function ComponentsStep({ bundle, go }: { bundle: Bundle } & Step
       </ul>
 
       <div className="flex max-w-md gap-2">
-        <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Add a part, e.g. Feuilletine crunch" aria-label="New component" />
+        <Input className="flex-1" value={name} onChange={(e) => setName(e.target.value)} placeholder="Add a part, e.g. Feuilletine crunch" aria-label="New component" />
         <Button onClick={() => { if (name.trim()) { addComponent(p.id, name.trim()); setName(''); } }}>Add</Button>
       </div>
 
       {gaps.map((g) => <Note key={g} tone="warn">{g}</Note>)}
 
-      <div className="flex flex-wrap gap-2">
+      <NextRow hint={`${comps.filter((c) => c.included).length} parts in the cake`}>
         {p.buildMode !== 'blank' && <Button onClick={() => resetComponents(p, flavors)}>Reset to suggested</Button>}
-        <Button primary onClick={() => go('size')} disabled={!comps.some((c) => c.included)}>Next: size and servings</Button>
-      </div>
+        <Button primary onClick={() => go('size')} disabled={!comps.some((c) => c.included)}>Next: size and servings →</Button>
+      </NextRow>
     </section>
   );
 }

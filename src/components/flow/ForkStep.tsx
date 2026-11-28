@@ -6,13 +6,14 @@ import { deriveTitle, saveProject, useFlavors } from '@/lib/repo';
 import type { BuildMode, CakeStyle, DessertType, Project, Variant } from '@/lib/types';
 import { STYLES, defaultSize, styleOf } from '@/lib/styles';
 import { DESSERT_LABEL } from '@/lib/templates';
-import { Card, Chip, H1, H2 } from '@/components/ui';
+import { Button, Card, Chip, FieldLabel, H1, H2, Segmented } from '@/components/ui';
 import type { StepProps } from './ProjectFlow';
 
-const MODES: { mode: BuildMode; title: string; text: string }[] = [
-  { mode: 'know', title: 'I know what I want', text: 'Pick the flavors, then the app suggests what goes inside.' },
-  { mode: 'inspire', title: 'Inspire me', text: 'Get flavor ideas from their request and popular pairings.' },
-  { mode: 'blank', title: 'Blank builder', text: 'Start from an empty cake and add every part yourself.' },
+// Round 8 fix: each option says what happens next, so the build doesn't feel like the request again.
+const MODES: { mode: BuildMode; title: string; text: string; then: string; tape: 'rose' | 'pistachio' | 'latte' }[] = [
+  { mode: 'know', title: 'I know what I want', text: 'Pick the flavors yourself.', then: 'Next: the app suggests what goes inside.', tape: 'rose' },
+  { mode: 'inspire', title: 'Inspire me', text: 'Ideas from their words and popular pairings.', then: 'Next: pick one of the flavor ideas.', tape: 'pistachio' },
+  { mode: 'blank', title: 'Blank builder', text: 'Start empty and add every part yourself.', then: 'Next: the empty cake, ready for layers.', tape: 'latte' },
 ];
 
 export default function ForkStep({ bundle, go }: { bundle: Bundle } & StepProps) {
@@ -43,17 +44,20 @@ export default function ForkStep({ bundle, go }: { bundle: Bundle } & StepProps)
 
   return (
     <section className="flex flex-col gap-6">
-      <H1>How do you want to build?</H1>
-      <div className="flex flex-col gap-2">
-        <H2>What are you making?</H2>
-        <div className="flex flex-wrap gap-2">
-          {(Object.keys(DESSERT_LABEL) as DessertType[]).map((t) => (
-            <Chip key={t} on={p.dessertType === t} onClick={() => setType(t)}>{DESSERT_LABEL[t]}</Chip>
-          ))}
-        </div>
+      <div className="flex flex-col gap-1">
+        <H1>How do you want to build?</H1>
+        <p className="text-espresso-muted">Their request is saved. Now it&apos;s your plan.</p>
+      </div>
+      <Card label="What you're making" className="flex flex-col gap-4">
+        <Segmented
+          label="Dessert"
+          value={p.dessertType}
+          options={(Object.keys(DESSERT_LABEL) as DessertType[]).map((t) => [t, DESSERT_LABEL[t]])}
+          onChange={setType}
+        />
         {styles && (
           <div className="flex flex-col gap-2">
-            <H2>What style?</H2>
+            <FieldLabel>Style</FieldLabel>
             <div className="flex flex-wrap gap-2">
               {styles.map(([v, l]) => (
                 <Chip key={v} on={styleOf(p) === v} onClick={() => setStyle(v)}>{l}</Chip>
@@ -61,15 +65,17 @@ export default function ForkStep({ bundle, go }: { bundle: Bundle } & StepProps)
             </div>
           </div>
         )}
-      </div>
-      <div className="grid gap-4 sm:grid-cols-3">
-        {MODES.map((m) => (
-          <button key={m.mode} type="button" onClick={() => pick(m.mode)} className="text-left">
-            <Card className={`h-full hover:border-neutral-800 ${p.buildMode === m.mode ? 'border-neutral-800' : ''}`}>
-              <p className="text-lg font-semibold">{m.title}</p>
-              <p className="mt-1 text-neutral-600">{m.text}</p>
-            </Card>
-          </button>
+      </Card>
+      <div className="grid gap-6 pt-2 sm:grid-cols-3">
+        {MODES.map((m, i) => (
+          <Card key={m.mode} tape={m.tape} selected={p.buildMode === m.mode} className="flex h-full flex-col gap-2">
+            <H2>{m.title}</H2>
+            <p className="text-sm">{m.text}</p>
+            <p className="text-xs text-espresso-muted">{m.then}</p>
+            <div className="mt-auto pt-2">
+              <Button primary={i === 0} small onClick={() => pick(m.mode)}>Start</Button>
+            </div>
+          </Card>
         ))}
       </div>
     </section>

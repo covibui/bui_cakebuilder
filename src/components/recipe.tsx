@@ -8,7 +8,7 @@ import { CAKE_COLORS, cakeColorStyle } from '@/lib/cakeColors';
 import { buildIsoCake, buildIsoSlice, isoCakeInner, type IsoBand, type IsoCake, type IsoPattern } from '@/lib/isoCake';
 import type { Band } from '@/lib/stack';
 import type { UnitPref } from '@/lib/units';
-import { Button, Chip } from './ui';
+import { Button } from './ui';
 
 // ---------- unit preference (per device) ----------
 
@@ -43,9 +43,11 @@ export function useUnitPref(): [UnitPref, (u: UnitPref) => void] {
 
 export function UnitToggle({ pref, setPref }: { pref: UnitPref; setPref: (u: UnitPref) => void }) {
   return (
-    <div className="flex items-center gap-2" role="group" aria-label="Units">
-      <Chip on={pref === 'cups'} onClick={() => setPref('cups')}>Cups</Chip>
-      <Chip on={pref === 'grams'} onClick={() => setPref('grams')}>Grams</Chip>
+    <div className="inline-flex gap-1 rounded-pill bg-paper p-1 shadow-sticker" role="group" aria-label="Units">
+      {(['cups', 'grams'] as const).map((u) => (
+        <button key={u} type="button" aria-pressed={pref === u} onClick={() => setPref(u)}
+          className={`h-8 rounded-pill px-3.5 text-[13px] font-extrabold capitalize text-espresso ${pref === u ? 'bg-rose' : ''}`}>{u}</button>
+      ))}
     </div>
   );
 }
@@ -69,23 +71,24 @@ const LABEL = { source: 'from a source', assumption: 'assumption', tested: 'test
 
 function CitationPanel({ citation, id, onClose }: { citation: Citation | null; id: string; onClose: () => void }) {
   return (
-    <div role="dialog" aria-modal="true" aria-label="Citation" className="fixed inset-0 z-50 flex items-end justify-center bg-black/30 p-4 sm:items-center" onClick={onClose}>
-      <div className="w-full max-w-md rounded-xl border-2 border-neutral-800 bg-white p-5" onClick={(e) => e.stopPropagation()}>
+    <div role="dialog" aria-modal="true" aria-label="Citation" className="fixed inset-0 z-50 flex items-end justify-center bg-espresso/30 p-4 sm:items-center" onClick={onClose}>
+      <div className="relative w-full max-w-md rounded-sm bg-paper p-6 pt-7 shadow-polaroid" onClick={(e) => e.stopPropagation()}>
+        <span aria-hidden className="absolute -top-[11px] left-1/2 -ml-12 block h-[22px] w-24 -rotate-3 [background:repeating-linear-gradient(90deg,rgba(255,255,255,.4)_0_5px,transparent_5px_10px),var(--latte)]" />
         {citation ? (
           <>
-            <p className="text-sm font-semibold">{MARK[citation.kind]} {id} · {LABEL[citation.kind]}</p>
-            <p className="mt-1 text-lg font-semibold">{citation.title}</p>
+            <p className="flex items-center gap-2 text-sm font-semibold"><Mark kind={citation.kind} id={id} /> {LABEL[citation.kind]}</p>
+            <p className="mt-2 font-display text-xl font-bold leading-[30px]">{citation.title}</p>
             <p className="mt-2">{citation.detail}</p>
-            {citation.why && <p className="mt-2 text-neutral-700"><b>Why:</b> {citation.why}</p>}
+            {citation.why && <p className="mt-2 text-espresso-muted"><b>Why:</b> {citation.why}</p>}
             {citation.refs.length > 0 && (
-              <ul className="mt-2 list-disc pl-5 text-sm text-neutral-700">{citation.refs.map((r) => <li key={r}>{r}</li>)}</ul>
+              <ul className="mt-2 list-disc pl-5 text-sm text-espresso-muted">{citation.refs.map((r) => <li key={r}>{r}</li>)}</ul>
             )}
             {citation.url && <a className="mt-2 block underline" href={citation.url} target="_blank" rel="noreferrer">Open the source</a>}
           </>
         ) : (
           <p>No citation found for mark {id}. Treat this as an assumption.</p>
         )}
-        <Button className="mt-4" onClick={onClose}>Close</Button>
+        <Button className="mt-5" onClick={onClose}>Close</Button>
       </div>
     </div>
   );
@@ -105,11 +108,11 @@ export function CitedText({ text, recipeId, citations }: { text: string; recipeI
             key={i}
             type="button"
             onClick={() => open(c, s.citationId)}
-            className={`mx-0.5 rounded px-1 underline decoration-2 underline-offset-4 ${kind === 'assumption' ? 'decoration-dotted' : 'decoration-solid'} ${kind === 'tested' ? 'bg-neutral-200' : ''}`}
+            className={`mx-0.5 rounded-xs underline decoration-[1.5px] underline-offset-4 ${kind === 'assumption' ? 'decoration-ribbon decoration-dashed' : 'decoration-stem'}`}
             aria-label={`${s.text}, ${LABEL[kind]}, ${s.citationId}`}
           >
             {s.text}
-            <sup className="ml-0.5 font-semibold">{MARK[kind]}{s.citationId}</sup>
+            <Mark kind={kind} id={s.citationId} />
           </button>
         );
       })}
@@ -117,10 +120,18 @@ export function CitedText({ text, recipeId, citations }: { text: string; recipeI
   );
 }
 
+/** Citation mark: solid pistachio = proven source, dashed ribbon = assumption, butter star = tested by you. */
+export function Mark({ kind, id }: { kind: keyof typeof MARK; id?: string }) {
+  const cls = kind === 'assumption' ? 'border-[1.5px] border-dashed border-ribbon text-ribbon leading-[13px]' : kind === 'tested' ? 'bg-butter leading-[15px]' : 'bg-pistachio leading-[15px]';
+  return <sup className={`ml-0.5 inline-block rounded-pill px-1.5 align-super font-body text-[10px] font-extrabold text-espresso ${cls}`}>{MARK[kind]}{id}</sup>;
+}
+
 export function CitationKey() {
   return (
-    <p className="text-sm text-neutral-600">
-      <b>✓</b> from a recipe a person wrote · <b>?</b> an assumption, tap to see why · <b>★</b> tested by you
+    <p className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-espresso-muted">
+      <span><Mark kind="source" /> from a recipe a person wrote</span>
+      <span><Mark kind="assumption" /> an assumption, tap to see why</span>
+      <span><Mark kind="tested" /> tested by you</span>
     </p>
   );
 }
@@ -130,7 +141,7 @@ export function CitationKey() {
 /** Roll cake cross-section: the sponge is one spiral; each filling runs alongside it, between the turns. */
 function Swirl({ components, highlight, scale }: { components: Component[]; highlight?: string; scale: number }) {
   const bands = rollSpiral(components);
-  if (!bands.length) return <p className="text-neutral-600">Turn on a sponge to see the swirl.</p>;
+  if (!bands.length) return <p className="text-espresso-muted">Turn on a sponge to see the swirl.</p>;
   const size = 220 * scale;
   const c = size / 2;
   const total = 3 * 2 * Math.PI; // three turns
@@ -154,18 +165,18 @@ function Swirl({ components, highlight, scale }: { components: Component[]; high
   const legend = [...new Map(bands.map((x) => [x.componentId, x])).values()];
   return (
     <figure className="w-full max-w-xs" aria-label="Cross-section of the roll, a swirl">
-      <svg viewBox={`0 0 ${size} ${size}`} className="w-full rounded-full border-2 border-neutral-800 bg-neutral-50">
+      <svg viewBox={`0 0 ${size} ${size}`} className="w-full rounded-full border-2 border-ribbon bg-paper-warm">
         {segs}
       </svg>
       <ul className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-xs">
         {legend.map((x) => (
           <li key={x.componentId} className={`flex items-center gap-1 ${x.componentId === highlight ? 'font-bold' : ''}`}>
-            <span className="inline-block h-3 w-3 border border-neutral-500" style={{ background: `var(--${x.color})` }} />
+            <span className="inline-block h-3 w-3 border border-border-control" style={{ background: `var(--${x.color})` }} />
             {x.label}
           </li>
         ))}
       </ul>
-      <figcaption className="mt-1 text-sm text-neutral-600">Cross-section of the roll</figcaption>
+      <figcaption className="mt-1 text-sm text-espresso-muted">Cross-section of the roll</figcaption>
     </figure>
   );
 }
@@ -188,22 +199,33 @@ function patternFor(b: Band, i: number): IsoPattern {
   return group === 'fruit' || group === 'crust' ? 'dots' : group === 'sponge' ? 'stripes' : 'chevron';
 }
 
+/** A sample cut cake, for the empty state. */
+export function IsoPreview() {
+  const v = (c: string) => `var(--${c})`;
+  const bands: IsoBand[] = [{ id: 'f', label: 'Buttercream', height: 12, fill: v('cake-strawberry'), isFrosting: true }];
+  for (let i = 0; i < 3; i++) {
+    bands.push({ id: 's', label: 'Sponge', height: 40, fill: v('cake-vanilla'), pattern: 'stripes' });
+    if (i < 2) bands.push({ id: 'j', label: 'Jam', height: 10, fill: v('cake-raspberry'), pattern: 'dots' }, { id: 'c', label: 'Custard', height: 14, fill: v('cake-custard'), pattern: 'chevron' });
+  }
+  return <IsoSvg cake={buildIsoCake(bands, { labels: false })} title="A layer cake with a quarter cut away" />;
+}
+
 /** Round cake in 3D with the front quarter cut away, or one slice. Layers carry their cake colors. */
 function IsoCrossSection({ components, size, highlight, labels }: { components: Component[]; size: Size; highlight?: string; labels: boolean }) {
   const [view, setView] = useState<'cake' | 'slice'>('cake');
   const bands = crossSection(components, size);
-  if (!bands.length) return <p className="text-neutral-600">Turn on a component to see the cross-section.</p>;
+  if (!bands.length) return <p className="text-espresso-muted">Turn on a component to see the cross-section.</p>;
   const iso: IsoBand[] = bands.map((b, i) => ({
     id: b.componentId, label: b.label, height: b.height, fill: `var(--${b.color})`, isFrosting: i === 0 && b.kind === 'frosting', pattern: patternFor(b, i),
   }));
-  const cake = view === 'cake' ? buildIsoCake(iso, { labels, highlight }) : buildIsoSlice(iso, { labels, highlight });
+  const cake = view === 'cake' ? buildIsoCake(iso, { labels, highlight, board: 'var(--latte-light)' }) : buildIsoSlice(iso, { labels, highlight });
   const legend = [...new Map(bands.map((x) => [x.componentId, x])).values()];
   return (
     <figure className="w-full">
       <div className="mb-2 flex gap-2" role="tablist" aria-label="Cross-section view">
         {([['cake', 'Whole cake'], ['slice', 'Slice']] as const).map(([v, l]) => (
           <button key={v} type="button" role="tab" aria-selected={view === v} onClick={() => setView(v)}
-            className={`rounded-pill px-3 py-1 text-xs font-extrabold ${view === v ? 'bg-rose' : 'bg-paper'}`}>{l}</button>
+            className={`h-8 rounded-pill px-3.5 text-[13px] font-extrabold text-espresso shadow-sticker ${view === v ? 'bg-rose' : 'bg-paper'}`}>{l}</button>
         ))}
       </div>
       <IsoSvg cake={cake} title={view === 'cake' ? 'Cake with a quarter cut away, showing the layers' : 'One slice, showing the layers'} />
@@ -226,21 +248,21 @@ export function CrossSection({ components, size, highlight, scale = 1.4, form = 
   if (form === 'swirl') return <Swirl components={components} highlight={highlight} scale={Math.min(scale, 1.4) / 1.4} />;
   if (form === 'iso') return <IsoCrossSection components={components} size={size} highlight={highlight} labels={labels} />;
   const bands = crossSection(components, size);
-  if (!bands.length) return <p className="text-neutral-600">Turn on a component to see the cross-section.</p>;
+  if (!bands.length) return <p className="text-espresso-muted">Turn on a component to see the cross-section.</p>;
   return (
     <figure className="w-full max-w-xs" aria-label="Cross-section, top to bottom">
-      <div className="overflow-hidden rounded-t-xl border-2 border-neutral-800">
+      <div className="overflow-hidden rounded-t-xl border-2 border-ribbon">
         {bands.map((b, i) => (
           <div
             key={i}
             style={{ height: Math.round(b.height * scale), ...cakeColorStyle(b.color) }}
-            className={`flex items-center justify-center border-b border-neutral-400 text-xs ${b.componentId === highlight ? 'font-bold outline-3 outline-offset-[-3px] outline-neutral-800' : ''}`}
+            className={`flex items-center justify-center border-b border-border-control text-xs ${b.componentId === highlight ? 'font-bold outline-3 outline-offset-[-3px] outline-ribbon' : ''}`}
           >
             {b.height * scale >= 14 ? b.label : ''}
           </div>
         ))}
       </div>
-      <figcaption className="mt-1 text-sm text-neutral-600">Cross-section, top tier</figcaption>
+      <figcaption className="mt-1 text-sm text-espresso-muted">Cross-section, top tier</figcaption>
     </figure>
   );
 }
