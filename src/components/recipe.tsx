@@ -1,10 +1,12 @@
 'use client';
 
-import { createContext, useContext, useState, useSyncExternalStore, type ReactNode } from 'react';
+import { createContext, useContext, useId, useState, useSyncExternalStore, type ReactNode } from 'react';
 import type { Citation, Component, Size } from '@/lib/types';
 import { parseMarks } from '@/lib/citations';
 import { crossSection, rollSpiral } from '@/lib/stack';
-import { cakeColorStyle } from '@/lib/cakeColors';
+import { CAKE_COLORS, cakeColorStyle } from '@/lib/cakeColors';
+import { buildIsoCake, buildIsoSlice, isoCakeInner, type IsoBand, type IsoCake, type IsoPattern } from '@/lib/isoCake';
+import type { Band } from '@/lib/stack';
 import type { UnitPref } from '@/lib/units';
 import { Button, Chip } from './ui';
 
@@ -168,8 +170,61 @@ function Swirl({ components, highlight, scale }: { components: Component[]; high
   );
 }
 
-export function CrossSection({ components, size, highlight, scale = 1.4, form = 'stack' }: { components: Component[]; size: Size; highlight?: string; scale?: number; form?: 'stack' | 'swirl' }) {
+function IsoSvg({ cake, title }: { cake: IsoCake; title: string }) {
+  const prefix = 'iso' + useId().replace(/[^a-zA-Z0-9]/g, '');
+  const w = cake.width + (cake.labels.length ? 60 : 0);
+  return (
+    <svg viewBox={`0 0 ${w} ${cake.height}`} className="h-auto w-full" role="img" aria-label={title}
+      dangerouslySetInnerHTML={{ __html: isoCakeInner(cake, prefix) }} />
+  );
+}
+
+/** Café Scrapbook pattern per layer (cake builder set): sponge stripes, cream chevron, fruit and crust dots; frosting and thin layers solid. */
+function patternFor(b: Band, i: number): IsoPattern {
+  if (b.height < 8 || (i === 0 && b.kind === 'frosting') || b.kind === 'frosting' || b.kind === 'glaze') return 'none';
+  if (b.kind === 'sponge') return 'stripes';
+  if (b.kind === 'crust' || b.kind === 'crunch') return 'dots';
+  const group = CAKE_COLORS[b.color].group;
+  return group === 'fruit' || group === 'crust' ? 'dots' : group === 'sponge' ? 'stripes' : 'chevron';
+}
+
+/** Round cake in 3D with the front quarter cut away, or one slice. Layers carry their cake colors. */
+function IsoCrossSection({ components, size, highlight, labels }: { components: Component[]; size: Size; highlight?: string; labels: boolean }) {
+  const [view, setView] = useState<'cake' | 'slice'>('cake');
+  const bands = crossSection(components, size);
+  if (!bands.length) return <p className="text-neutral-600">Turn on a component to see the cross-section.</p>;
+  const iso: IsoBand[] = bands.map((b, i) => ({
+    id: b.componentId, label: b.label, height: b.height, fill: `var(--${b.color})`, isFrosting: i === 0 && b.kind === 'frosting', pattern: patternFor(b, i),
+  }));
+  const cake = view === 'cake' ? buildIsoCake(iso, { labels, highlight }) : buildIsoSlice(iso, { labels, highlight });
+  const legend = [...new Map(bands.map((x) => [x.componentId, x])).values()];
+  return (
+    <figure className="w-full">
+      <div className="mb-2 flex gap-2" role="tablist" aria-label="Cross-section view">
+        {([['cake', 'Whole cake'], ['slice', 'Slice']] as const).map(([v, l]) => (
+          <button key={v} type="button" role="tab" aria-selected={view === v} onClick={() => setView(v)}
+            className={`rounded-pill px-3 py-1 text-xs font-extrabold ${view === v ? 'bg-rose' : 'bg-paper'}`}>{l}</button>
+        ))}
+      </div>
+      <IsoSvg cake={cake} title={view === 'cake' ? 'Cake with a quarter cut away, showing the layers' : 'One slice, showing the layers'} />
+      {!labels && (
+        <ul className="mt-2 flex flex-col gap-1 text-xs">
+          {legend.map((x) => (
+            <li key={x.componentId} className={`flex items-center gap-2 ${x.componentId === highlight ? 'font-bold' : ''}`}>
+              <span className="inline-block h-3 w-3 rounded-xs" style={{ background: `var(--${x.color})`, boxShadow: 'inset 0 0 0 1px rgba(74,52,44,.2)' }} />
+              {x.label}
+            </li>
+          ))}
+        </ul>
+      )}
+      <figcaption className="mt-1 text-sm text-espresso-muted">Top tier, {size.tiers[0]?.sizeIn ?? 8} in round</figcaption>
+    </figure>
+  );
+}
+
+export function CrossSection({ components, size, highlight, scale = 1.4, form = 'stack', labels = false }: { components: Component[]; size: Size; highlight?: string; scale?: number; form?: 'stack' | 'swirl' | 'iso'; labels?: boolean }) {
   if (form === 'swirl') return <Swirl components={components} highlight={highlight} scale={Math.min(scale, 1.4) / 1.4} />;
+  if (form === 'iso') return <IsoCrossSection components={components} size={size} highlight={highlight} labels={labels} />;
   const bands = crossSection(components, size);
   if (!bands.length) return <p className="text-neutral-600">Turn on a component to see the cross-section.</p>;
   return (
