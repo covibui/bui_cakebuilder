@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Card, H1 } from '@/components/ui';
+import { AppBar, ButtonLink, Card, H1, Page, Tag } from '@/components/ui';
 import { useBakeLogs, useProjects } from '@/lib/repo';
 
 export default function LogsPage() {
@@ -10,24 +10,33 @@ export default function LogsPage() {
   const title = (id: string) => projects.find((p) => p.id === id)?.title ?? 'Deleted cake';
 
   return (
-    <main className="mx-auto flex w-full max-w-3xl flex-col gap-6 p-6">
-      <Link href="/" className="font-semibold underline">← Your cakes</Link>
-      <H1>Bake log</H1>
-      {logs?.length === 0 && <p className="text-neutral-600">No bakes logged yet.</p>}
-      <ul className="flex flex-col gap-3">
-        {logs?.map((l) => (
-          <li key={l.id}>
-            <Link href={`/project?id=${l.projectId}&step=build`}>
-              <Card className="hover:border-neutral-800">
-                <p className="text-sm text-neutral-600">{l.bakedOn}</p>
-                <p className="text-lg font-semibold">{title(l.projectId)}</p>
-                <p className="text-sm">{l.results.filter((r) => r.verdict === 'change').length} changes · {l.measured.filter((m) => m.value).length} guesses tested</p>
-                {l.notes && <p className="mt-1 text-neutral-700">{l.notes}</p>}
+    <>
+      <AppBar>
+        <ButtonLink href="/" small>Your cakes</ButtonLink>
+      </AppBar>
+      <Page className="max-w-3xl">
+        <H1>Bake log</H1>
+        {logs?.length === 0 && (
+          <Card label="Nothing yet">
+            <p className="text-espresso-muted">Bakes you log show here, and their notes lead the next bake.</p>
+          </Card>
+        )}
+        <ul className="flex flex-col gap-5">
+          {logs?.map((l, i) => (
+            <li key={l.id}>
+              <Card tape={(['pistachio', 'rose', 'latte'] as const)[i % 3]} className="flex flex-col gap-1">
+                <span className="font-accent text-xs font-medium uppercase tracking-[.12em] text-espresso-muted">{l.bakedOn}</span>
+                <Link href={`/project?id=${l.projectId}&step=build`} className="font-display text-xl font-bold hover:underline">{title(l.projectId)}</Link>
+                <p className="flex flex-wrap gap-2 text-sm">
+                  <Tag tone="rose">{l.results.filter((r) => r.verdict === 'change').length} changes</Tag>
+                  <Tag>{l.measured.filter((m) => m.value).length} guesses tested</Tag>
+                </p>
+                {l.notes && <p className="mt-1 text-espresso-muted">“{l.notes}”</p>}
               </Card>
-            </Link>
-          </li>
-        ))}
-      </ul>
-    </main>
+            </li>
+          ))}
+        </ul>
+      </Page>
+    </>
   );
 }

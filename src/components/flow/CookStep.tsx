@@ -6,7 +6,7 @@ import { saveProject } from '@/lib/repo';
 import { bakeTimeline, planComponents } from '@/lib/plan';
 import { displayAmount } from '@/lib/units';
 import type { Step as RecipeStep } from '@/lib/types';
-import { Button, Card, Chip, H1, H2, Note } from '@/components/ui';
+import { Button, Card, H1, H2, LabelTape, NextRow, Note, Segmented } from '@/components/ui';
 import { sectionForm } from '@/lib/styles';
 import { CitationProvider, CitedText, CrossSection, UnitToggle, useUnitPref } from '@/components/recipe';
 import type { StepProps } from './ProjectFlow';
@@ -94,10 +94,12 @@ export default function CookStep({ bundle, go }: { bundle: Bundle } & StepProps)
     <CitationProvider>
       <section className="flex flex-col gap-5">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <H1>Bake: {p.title}</H1>
-          <div className="flex flex-wrap gap-2">
-            <Chip on={view === 'card'} onClick={() => setView('card')}>Recipe card</Chip>
-            <Chip on={view === 'walk'} onClick={() => setView('walk')}>Walkthrough</Chip>
+          <div className="flex flex-col gap-1">
+            <span className="font-accent text-[11px] font-medium uppercase tracking-[.12em] text-espresso-muted">Cook mode · screen stays on</span>
+            <H1>{p.title}</H1>
+          </div>
+          <div className="flex flex-wrap items-center gap-3">
+            <Segmented label="Cook view" value={view} onChange={setView} options={[['card', 'Recipe card'], ['walk', 'Step by step']]} />
             <UnitToggle pref={pref} setPref={setPref} />
           </div>
         </div>
@@ -109,34 +111,40 @@ export default function CookStep({ bundle, go }: { bundle: Bundle } & StepProps)
         )}
 
         {t.timer && (
-          <div role="timer" className="flex items-center justify-between rounded-xl border-2 border-neutral-800 bg-neutral-100 p-3">
-            <span className="font-semibold">{t.timer.label}{t.left === 0 ? ' · done' : ''}</span>
-            <span className="text-2xl font-bold tabular-nums">{fmt(t.left)}</span>
-            <Button onClick={t.stop}>Stop</Button>
+          <div role="timer" className={`sticky top-20 z-20 flex items-center justify-between gap-3 rounded-pill px-5 py-2 shadow-paper ${t.left === 0 ? 'bg-pistachio' : 'bg-butter'}`}>
+            <span className="font-bold">{t.timer.label}{t.left === 0 ? ' · done' : ''}</span>
+            <span className="font-accent text-[30px] font-medium tabular-nums">{fmt(t.left)}</span>
+            <Button small onClick={t.stop}>Stop</Button>
           </div>
         )}
 
-        <div className="grid gap-6 md:grid-cols-[minmax(0,14rem)_1fr]">
-          <CrossSection components={bundle.components} size={p.size} form={sectionForm(p)} highlight={view === 'walk' ? cur.componentId ?? undefined : open ?? undefined} scale={1.1} />
+        <div className="grid gap-6 lg:grid-cols-[minmax(0,20rem)_1fr]">
+          {/* Phones: the step you're on comes first; the cake follows. */}
+          <div className="order-2 lg:order-none lg:sticky lg:top-24 lg:self-start">
+            <Card tape="rose" label="You are here">
+              <CrossSection components={bundle.components} size={p.size} form={sectionForm(p)} highlight={view === 'walk' ? cur.componentId ?? undefined : open ?? undefined} scale={1.1} />
+            </Card>
+          </div>
 
           {view === 'card' ? (
-            <div className="flex flex-col gap-3">
+            <div className="flex flex-col gap-5">
               {days.map((d) => (
-                <div key={d.offset} className="flex flex-col gap-2">
-                  <H2>{d.label}</H2>
+                <div key={d.offset} className="flex flex-col gap-3">
+                  <div><LabelTape>{d.label}</LabelTape></div>
                   {plans.filter((x) => x.component.makeAheadDay === d.offset).map((x) => (
                     <Card key={x.component.id}>
-                      <button type="button" className="flex w-full justify-between text-left font-semibold" aria-expanded={open === x.component.id} onClick={() => setOpen(open === x.component.id ? null : x.component.id)}>
-                        {x.component.name} <span aria-hidden>{open === x.component.id ? '−' : '+'}</span>
+                      <button type="button" className="flex w-full items-center justify-between gap-3 text-left" aria-expanded={open === x.component.id} onClick={() => setOpen(open === x.component.id ? null : x.component.id)}>
+                        <H2>{x.component.name}</H2>
+                        <span aria-hidden className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-rose-light text-lg font-bold">{open === x.component.id ? '−' : '+'}</span>
                       </button>
                       {open === x.component.id && (
                         <div className="mt-2 flex flex-col gap-2">
-                          <ul>{x.ingredients.map((ing) => <li key={ing.name}>{displayAmount(ing, ing.scaled, pref)} {ing.name}</li>)}</ul>
-                          <ol className="list-decimal pl-5">
+                          <ul className="grid gap-x-6 sm:grid-cols-2">{x.ingredients.map((ing) => <li key={ing.name} className="flex justify-between gap-3 border-b border-dashed border-latte py-1"><span>{ing.name}</span><span className="font-accent font-medium">{displayAmount(ing, ing.scaled, pref)}</span></li>)}</ul>
+                          <ol className="list-decimal pl-5 leading-7">
                             {x.recipe.steps.map((s, k) => (
                               <li key={k} className="py-1">
                                 <CitedText text={s.text} recipeId={x.recipe.id} citations={bundle.citations} />
-                                {s.timer && <Button className="ml-2 min-h-9 py-1 text-sm" onClick={() => t.start(s.timer!.label, s.timer!.seconds)}>Start {fmt(s.timer.seconds)}</Button>}
+                                {s.timer && <Button small className="ml-2" onClick={() => t.start(s.timer!.label, s.timer!.seconds)}>⏱ {fmt(s.timer.seconds)}</Button>}
                               </li>
                             ))}
                           </ol>
@@ -146,16 +154,22 @@ export default function CookStep({ bundle, go }: { bundle: Bundle } & StepProps)
                   ))}
                 </div>
               ))}
-              <div><Button primary onClick={() => go('log')}>Done baking: log it</Button></div>
+              <NextRow hint="Next: log what worked, so the next bake starts smarter.">
+                <Button primary onClick={() => go('log')}>Done baking: log it →</Button>
+              </NextRow>
             </div>
           ) : (
-            <div className="flex flex-col gap-4">
-              <p className="text-sm text-neutral-600">Step {i + 1} of {items.length} · {cur.day} · {cur.component}</p>
+            <Card tape="gingham" className="flex flex-col gap-4">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <LabelTape>{cur.day}</LabelTape>
+                <span className="font-accent text-sm font-medium text-espresso-muted">Step {i + 1} of {items.length} · {cur.component}</span>
+              </div>
+              <div aria-hidden className="h-2 overflow-hidden rounded-pill bg-latte-light"><span className="block h-full rounded-pill bg-ribbon" style={{ width: `${((i + 1) / Math.max(1, items.length)) * 100}%` }} /></div>
               <ol className="flex flex-col gap-2">
                 {items.map((x, k) =>
                   Math.abs(k - i) <= 2 ? (
                     <li key={k}>
-                      <button type="button" onClick={() => setI(k)} className={`text-left ${k === i ? 'border-l-4 border-neutral-800 pl-3 text-2xl font-bold' : 'pl-4 text-neutral-500'}`} aria-current={k === i ? 'step' : undefined}>
+                      <button type="button" onClick={() => setI(k)} className={`w-full rounded-md px-3 py-2 text-left ${k === i ? 'bg-rose-light font-display text-[26px] font-semibold leading-9' : 'text-espresso-muted'}`} aria-current={k === i ? 'step' : undefined}>
                         {x.recipeId ? <CitedText text={x.step.text} recipeId={x.recipeId} citations={bundle.citations} /> : x.step.text}
                       </button>
                     </li>
@@ -163,11 +177,11 @@ export default function CookStep({ bundle, go }: { bundle: Bundle } & StepProps)
                 )}
               </ol>
               {cur.step.timer && <div><Button onClick={() => t.start(cur.step.timer!.label, cur.step.timer!.seconds)}>Start timer · {fmt(cur.step.timer.seconds)}</Button></div>}
-              <div className="flex gap-2">
+              <NextRow hint={last ? 'Last step.' : `Up next: ${items[i + 1]?.component ?? ''}`}>
                 <Button onClick={() => setI(Math.max(0, i - 1))} disabled={i === 0}>← Back</Button>
                 <Button primary onClick={() => (last ? go('log') : setI(i + 1))}>{last ? 'Finish and log it' : 'Next step →'}</Button>
-              </div>
-            </div>
+              </NextRow>
+            </Card>
           )}
         </div>
       </section>

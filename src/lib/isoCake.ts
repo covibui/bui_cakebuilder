@@ -45,7 +45,8 @@ export interface IsoCakeOptions {
   height?: number; // target cake height in px
   cut?: number; // wedge angle removed, degrees
   labels?: boolean;
-  highlight?: string; // band id drawn with a ribbon outline
+  highlight?: string; // band id kept bright while the other layers fade back
+  board?: string; // cake board color (default paper; use latte-light on a white card)
 }
 
 export interface IsoCake {
@@ -126,7 +127,7 @@ export function buildIsoCake(bands: IsoBand[], o: IsoCakeOptions = {}): IsoCake 
 
   // Plate and shadow.
   const plate = (r: number, y: number) => path(arc(0, 360, r, y));
-  shapes.push({ d: plate(R * 1.18, bottom), fill: 'var(--paper)' }); // plain board: no rim, no shadow
+  shapes.push({ d: plate(R * 1.18, bottom), fill: o.board ?? 'var(--paper)' }); // plain board: no rim, no shadow
 
   // Outer side: visible where the side faces the viewer (0–180°), minus the cut.
   const sideRanges: [number, number][] = [
@@ -181,20 +182,19 @@ export function buildIsoCake(bands: IsoBand[], o: IsoCakeOptions = {}): IsoCake 
     if (dark) shapes.push({ d: face(t, 0, R, 0, H), fill: 'var(--paper)', opacity: dark }); // lit face
   }
 
-  // Highlight the selected layer on both faces.
+  // Selected layer: the others fade back on both faces (gentler than an outline).
   if (o.highlight) {
     rows.forEach((row, i) => {
-      if (row.id !== o.highlight) return;
+      if (row.id === o.highlight) return;
       for (const t of [tL, tR]) {
-        const full = frosted && i === 0;
-        const d = face(t, 0, full ? R : R - coat, row.a, row.b);
-        shapes.push({ d, fill: 'none', stroke: 'var(--paper)', strokeWidth: 6 }); // paper gap, then ribbon, like LayerBand
-        shapes.push({ d, fill: 'none', stroke: 'var(--ribbon)', strokeWidth: 2.5 });
+        const d = frosted && i === 0
+          ? sharp([rim(t, 0, top), rim(t, R, top), rim(t, R, top + H), rim(t, R - coat, top + H), rim(t, R - coat, top + row.b), rim(t, 0, top + row.b)])
+          : face(t, 0, frosted ? R - coat : R, row.a, row.b);
+        shapes.push({ d, fill: 'var(--paper)', opacity: 0.55 });
       }
     });
   }
 
-  // Center line where the faces meet.
   const seamTop = top + (frosted ? rows[0].b : 0); // the center line stops at the frosting
   shapes.push({ d: `M${P(cx)},${P(seamTop)} L${P(cx)},${P(bottom)}`, fill: 'none', ...EDGE });
 
@@ -322,11 +322,7 @@ export function buildIsoSlice(bands: IsoBand[], o: { width?: number; depth?: num
     const fd = path([[x0, top + r.a], [xr, top + r.a], [xr, top + r.b], [x0, top + r.b]]);
     shapes.push({ d: fd, fill: r.fill, bandId: r.id, ...EDGE });
     overlay(fd, r.pattern, 'front');
-    if (o.highlight === r.id) {
-      const d = path([[x0, top + r.a], [xr, top + r.a], [xr, top + r.b], [x0, top + r.b]]);
-      shapes.push({ d, fill: 'none', stroke: 'var(--paper)', strokeWidth: 6 });
-      shapes.push({ d, fill: 'none', stroke: 'var(--ribbon)', strokeWidth: 2.5 });
-    }
+    if (o.highlight && o.highlight !== r.id) shapes.push({ d: fd, fill: 'var(--paper)', opacity: 0.55 });
   });
   if (frosted) {
     const b0 = rows[0].b;

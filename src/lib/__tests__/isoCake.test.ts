@@ -22,8 +22,9 @@ describe('iso cake', () => {
     const ys = buildIsoCake([...bands, { id: 'k', label: 'Soak', height: 2, fill: 'var(--cake-golden)' }]).labels.map((l) => l.at[1]);
     ys.slice(1).forEach((y, i) => expect(y - ys[i]).toBeGreaterThanOrEqual(18));
   });
-  it('outlines the highlighted layer in ribbon', () => {
-    expect(buildIsoCake(bands, { highlight: 'j' }).shapes.some((s) => s.stroke === 'var(--ribbon)')).toBe(true);
+  it('fades every layer but the highlighted one', () => {
+    const fades = buildIsoCake(bands, { highlight: 'j' }).shapes.filter((s) => s.fill === 'var(--paper)' && s.opacity === 0.55);
+    expect(fades.length).toBe(6); // 3 other layers × 2 faces
   });
   it('gets taller with more layers', () => {
     const tall = buildIsoCake([...bands, ...bands.slice(1)], { labels: false });

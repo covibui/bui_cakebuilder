@@ -5,7 +5,7 @@ import { saveProject } from '@/lib/repo';
 import { suggestTiers } from '@/lib/scaling';
 import type { Shape, Size } from '@/lib/types';
 import { isSinglePan } from '@/lib/styles';
-import { Button, Card, Chip, Field, H1, H2, Input } from '@/components/ui';
+import { Button, Card, Field, H1, H2, Input, NextRow, Segmented } from '@/components/ui';
 import type { StepProps } from './ProjectFlow';
 
 const SHAPES: [Shape, string][] = [
@@ -26,7 +26,10 @@ export default function SizeStep({ bundle, go }: { bundle: Bundle } & StepProps)
 
   return (
     <section className="flex max-w-2xl flex-col gap-6">
-      <H1>Size and servings</H1>
+      <div className="flex flex-col gap-1">
+        <H1>Size and servings</H1>
+        <p className="text-espresso-muted">Form comes last. Pans are suggested from servings.</p>
+      </div>
       <Field label="Servings" hint="Pans are suggested from this, then you can change them.">
         <div className="flex gap-2">
           <Input type="number" min={1} className="w-28" value={p.request.servings ?? ''} onChange={(e) => setServings(e.target.value ? Number(e.target.value) : null)} />
@@ -36,11 +39,7 @@ export default function SizeStep({ bundle, go }: { bundle: Bundle } & StepProps)
 
       <div className="flex flex-col gap-2">
         <H2>Shape</H2>
-        <div className="flex flex-wrap gap-2">
-          {SHAPES.map(([s, l]) => (
-            <Chip key={s} on={p.size.shape === s} onClick={() => setSize({ shape: s, tiers: SINGLE[s] ? [SINGLE[s]!] : s === 'cupcake' ? [{ sizeIn: p.request.servings ?? 12, layers: 1 }] : s === 'ring' ? [{ sizeIn: 7, layers: 1 }] : tiers })}>{l}</Chip>
-          ))}
-        </div>
+        <Segmented label="Shape" value={p.size.shape} options={SHAPES} onChange={(s) => setSize({ shape: s, tiers: SINGLE[s] ? [SINGLE[s]!] : s === 'cupcake' ? [{ sizeIn: p.request.servings ?? 12, layers: 1 }] : s === 'ring' ? [{ sizeIn: 7, layers: 1 }] : tiers })} />
       </div>
 
       {isSinglePan(p.size.shape) && p.size.shape !== 'sheet' && p.size.shape !== 'jelly-roll' && (
@@ -70,14 +69,16 @@ export default function SizeStep({ bundle, go }: { bundle: Bundle } & StepProps)
       )}
 
       <label className="flex items-start gap-3">
-        <input type="checkbox" className="mt-1 h-5 w-5" checked={p.size.justEnough} onChange={() => setSize({ justEnough: !p.size.justEnough })} />
+        <input type="checkbox" className="mt-1 h-5 w-5 accent-ribbon" checked={p.size.justEnough} onChange={() => setSize({ justEnough: !p.size.justEnough })} />
         <span>
           <b>Just enough</b>
-          <span className="block text-neutral-600">{p.size.justEnough ? 'Leftover: about one slice’s worth.' : 'Adds about 10% extra for safety.'}</span>
+          <span className="block text-espresso-muted">{p.size.justEnough ? 'Leftover: about one slice’s worth.' : 'Adds about 10% extra for safety.'}</span>
         </span>
       </label>
 
-      <div><Button primary onClick={() => go('build')}>See your build</Button></div>
+      <NextRow hint="Next: your full build, recipes and timeline.">
+        <Button primary onClick={() => go('build')}>See your build →</Button>
+      </NextRow>
     </section>
   );
 }

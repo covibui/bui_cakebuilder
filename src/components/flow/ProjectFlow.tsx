@@ -1,6 +1,5 @@
 'use client';
 
-import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useState } from 'react';
 import { useProject } from '@/lib/repo';
@@ -12,6 +11,7 @@ import SizeStep from './SizeStep';
 import BuildStep from './BuildStep';
 import CookStep from './CookStep';
 import LogStep from './LogStep';
+import { AppBar, Button, ButtonLink, Card, H2, NextRow, Page, StepTabs } from '@/components/ui';
 
 export type Step = 'request' | 'fork' | 'flavor' | 'comp' | 'size' | 'build' | 'cook' | 'log' | 'done';
 
@@ -44,64 +44,54 @@ export default function ProjectFlow() {
   if (bundle === undefined) return null;
   if (bundle === null) {
     return (
-      <main className="p-6">
-        <p>That cake isn&apos;t on this device.</p>
-        <Link href="/" className="underline">Back to your cakes</Link>
-      </main>
+      <>
+        <AppBar />
+        <Page>
+          <Card label="Not found">
+            <p>That cake isn&apos;t on this device.</p>
+            <div className="mt-3"><ButtonLink href="/" primary>Back to your cakes</ButtonLink></div>
+          </Card>
+        </Page>
+      </>
     );
   }
 
   const ci = WIZARD.findIndex(([s]) => s === step);
 
   return (
-    <main className="mx-auto flex w-full max-w-5xl flex-col gap-6 p-6">
-      <nav className="flex flex-wrap items-center justify-between gap-3">
-        <Link href="/" className="font-semibold underline">← Your cakes</Link>
-        <span className="text-sm text-neutral-600">{bundle.project.title}</span>
-      </nav>
+    <>
+      <AppBar title={bundle.project.title} saved>
+        <ButtonLink href="/" small>Your cakes</ButtonLink>
+      </AppBar>
+      <Page>
+        {ci >= 0 && <StepTabs steps={WIZARD} current={ci} onGo={go} />}
 
-      {ci >= 0 && (
-        <ol className="flex flex-wrap gap-x-4 gap-y-2" aria-label="Steps">
-          {WIZARD.map(([s, label], i) => (
-            <li key={s}>
-              <button
-                type="button"
-                onClick={() => go(s)}
-                aria-current={i === ci ? 'step' : undefined}
-                className={`flex min-h-9 items-center gap-2 ${i === ci ? 'font-bold' : ''}`}
-              >
-                <span className={`inline-flex h-7 w-7 items-center justify-center rounded-full border-2 border-neutral-800 text-xs ${i <= ci ? 'bg-neutral-800 text-white' : ''}`}>
-                  {i + 1}
-                </span>
-                {label}
-              </button>
-            </li>
-          ))}
-        </ol>
-      )}
-
-      {step === 'request' && <RequestStep bundle={bundle} go={go} />}
-      {step === 'fork' && <ForkStep bundle={bundle} go={go} />}
-      {step === 'flavor' && <FlavorStep bundle={bundle} go={go} />}
-      {step === 'comp' && <ComponentsStep bundle={bundle} go={go} />}
-      {step === 'size' && <SizeStep bundle={bundle} go={go} />}
-      {step === 'build' && <BuildStep bundle={bundle} go={go} />}
-      {step === 'cook' && <CookStep bundle={bundle} go={go} />}
-      {step === 'log' && <LogStep bundle={bundle} go={go} onSaved={setSummary} />}
-      {step === 'done' && (
-        <section className="flex flex-col gap-4">
-          <h1 className="text-2xl font-bold">Logged. Next time starts smarter.</h1>
-          {summary.length ? (
-            <ul className="list-disc pl-6">{summary.map((s) => <li key={s}>{s}</li>)}</ul>
-          ) : (
-            <p>No changes recorded this time.</p>
-          )}
-          <div className="flex flex-wrap gap-2">
-            <button type="button" className="min-h-11 rounded-lg border-2 border-neutral-800 px-4 font-semibold" onClick={() => go('build')}>See the updated recipe</button>
-            <Link href="/" className="flex min-h-11 items-center rounded-lg border-2 border-neutral-800 bg-neutral-800 px-4 font-semibold text-white">Back to your cakes</Link>
-          </div>
-        </section>
-      )}
-    </main>
+        {step === 'request' && <RequestStep bundle={bundle} go={go} />}
+        {step === 'fork' && <ForkStep bundle={bundle} go={go} />}
+        {step === 'flavor' && <FlavorStep bundle={bundle} go={go} />}
+        {step === 'comp' && <ComponentsStep bundle={bundle} go={go} />}
+        {step === 'size' && <SizeStep bundle={bundle} go={go} />}
+        {step === 'build' && <BuildStep bundle={bundle} go={go} />}
+        {step === 'cook' && <CookStep bundle={bundle} go={go} />}
+        {step === 'log' && <LogStep bundle={bundle} go={go} onSaved={setSummary} />}
+        {step === 'done' && (
+          <section className="mx-auto flex w-full max-w-xl flex-col gap-4">
+            <Card tape="pistachio" label="Logged">
+              <p className="font-display text-[33px] font-medium leading-[45px] tracking-[-.16px]">Next time starts smarter.</p>
+              <H2 className="mt-4">What changed in your recipes</H2>
+              {summary.length ? (
+                <ul className="mt-1 list-disc pl-6">{summary.map((s) => <li key={s}>{s}</li>)}</ul>
+              ) : (
+                <p className="text-espresso-muted">No changes recorded this time.</p>
+              )}
+              <NextRow hint="Your notes now lead the next bake.">
+                <Button onClick={() => go('build')}>See the updated recipe</Button>
+                <ButtonLink href="/" primary>Back to your cakes</ButtonLink>
+              </NextRow>
+            </Card>
+          </section>
+        )}
+      </Page>
+    </>
   );
 }
