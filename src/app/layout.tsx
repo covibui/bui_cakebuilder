@@ -1,8 +1,18 @@
 import type { Metadata } from "next";
+// Café Scrapbook type, bundled from npm (Fontsource) so the PWA has its fonts offline
+// and neither the build nor the browser calls Google.
+import "@fontsource/poppins/400.css";
+import "@fontsource/poppins/500.css";
+import "@fontsource/poppins/600.css";
+import "@fontsource/poppins/700.css";
+import "@fontsource/roboto/500.css";
+import "@fontsource/nunito/400.css";
+import "@fontsource/nunito/600.css";
+import "@fontsource/nunito/700.css";
+import "@fontsource/nunito/800.css";
 import "./globals.css";
 import RegisterSW from "@/components/RegisterSW";
 
-// System fonts until hi-fi picks a typeface (also keeps the PWA working offline).
 export const metadata: Metadata = {
   title: "Cake Builder",
   description: "Plan ambitious cakes: flavors, layers, scaled recipes and a bake timeline.",

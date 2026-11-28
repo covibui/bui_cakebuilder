@@ -1,19 +1,154 @@
 @import "tailwindcss";
 
+/*
+ * Café Scrapbook design system tokens (from its tokens.json, 2026-11-28).
+ * UI colors style the app. cake-* colors only draw cake (layers, minis, flavor chips).
+ */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* UI */
+  --milk: #FBF6EF;
+  --paper: #FFFFFF;
+  --paper-warm: #FFF9F3;
+  --latte: #E3CDB5;
+  --latte-light: #F6E3D3;
+  --rose: #F2C9CF;
+  --rose-light: #FBEDEF;
+  --pistachio: #CBD9BC;
+  --butter: #F6E3B4;
+  --ribbon: #A9505F;
+  --ribbon-dark: #8F4050;
+  --espresso: #4A342C;
+  --espresso-muted: #7A6256;
+  --border-control: #9C7F6B;
+  --taste-sweet: #D9718A;
+  --taste-sour: #D9A441;
+  --taste-salty: #86A9C8;
+  --taste-bitter: #8A6F62;
+  --taste-umami: #8FAE82;
+  --stem: #7E967B;
+
+  /* Cake palette */
+  --cake-vanilla: #F3DDB0;
+  --cake-golden: #E6BF73;
+  --cake-spice: #94603A;
+  --cake-red-velvet: #A8383F;
+  --cake-chocolate: #6B4434;
+  --cake-cookie: #2E2826;
+  --cake-matcha: #9DB46A;
+  --cake-pistachio: #C3CC8C;
+  --cake-earl-grey: #C8B8A6;
+  --cake-strawberry: #EE8C98;
+  --cake-raspberry: #C2405A;
+  --cake-cherry: #8A2638;
+  --cake-blueberry: #5B5E9E;
+  --cake-lemon: #F3D65E;
+  --cake-lime: #B8D05A;
+  --cake-mango: #F2A23A;
+  --cake-meringue: #FFFDF8;
+  --cake-buttercream: #F8EBD0;
+  --cake-cream-cheese: #F3EDE1;
+  --cake-custard: #F2D88A;
+  --cake-caramel: #D6A061;
+  --cake-mocha: #7E5A48;
+  --cake-ganache: #3B2420;
+  --cake-pistachio-cream: #D4DDA8;
+  --cake-graham: #C9995F;
+  --cake-pastry: #E4C38C;
+  --cake-praline: #8A5A2E;
+  --cake-kataifi: #D8A55A;
+  --cake-basque-top: #5A3220;
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-12: 48px;
+  --tilt-none: 0deg;
+  --tilt-sm: -1deg;
+  --tilt-md: -2deg;
 }
 
+/* Tailwind utilities: bg-milk, text-espresso, bg-cake-raspberry, font-display, rounded-pill, shadow-paper */
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+  --color-milk: var(--milk);
+  --color-paper: var(--paper);
+  --color-paper-warm: var(--paper-warm);
+  --color-latte: var(--latte);
+  --color-latte-light: var(--latte-light);
+  --color-rose: var(--rose);
+  --color-rose-light: var(--rose-light);
+  --color-pistachio: var(--pistachio);
+  --color-butter: var(--butter);
+  --color-ribbon: var(--ribbon);
+  --color-ribbon-dark: var(--ribbon-dark);
+  --color-espresso: var(--espresso);
+  --color-espresso-muted: var(--espresso-muted);
+  --color-border-control: var(--border-control);
+  --color-taste-sweet: var(--taste-sweet);
+  --color-taste-sour: var(--taste-sour);
+  --color-taste-salty: var(--taste-salty);
+  --color-taste-bitter: var(--taste-bitter);
+  --color-taste-umami: var(--taste-umami);
+  --color-stem: var(--stem);
+  --color-cake-vanilla: var(--cake-vanilla);
+  --color-cake-golden: var(--cake-golden);
+  --color-cake-spice: var(--cake-spice);
+  --color-cake-red-velvet: var(--cake-red-velvet);
+  --color-cake-chocolate: var(--cake-chocolate);
+  --color-cake-cookie: var(--cake-cookie);
+  --color-cake-matcha: var(--cake-matcha);
+  --color-cake-pistachio: var(--cake-pistachio);
+  --color-cake-earl-grey: var(--cake-earl-grey);
+  --color-cake-strawberry: var(--cake-strawberry);
+  --color-cake-raspberry: var(--cake-raspberry);
+  --color-cake-cherry: var(--cake-cherry);
+  --color-cake-blueberry: var(--cake-blueberry);
+  --color-cake-lemon: var(--cake-lemon);
+  --color-cake-lime: var(--cake-lime);
+  --color-cake-mango: var(--cake-mango);
+  --color-cake-meringue: var(--cake-meringue);
+  --color-cake-buttercream: var(--cake-buttercream);
+  --color-cake-cream-cheese: var(--cake-cream-cheese);
+  --color-cake-custard: var(--cake-custard);
+  --color-cake-caramel: var(--cake-caramel);
+  --color-cake-mocha: var(--cake-mocha);
+  --color-cake-ganache: var(--cake-ganache);
+  --color-cake-pistachio-cream: var(--cake-pistachio-cream);
+  --color-cake-graham: var(--cake-graham);
+  --color-cake-pastry: var(--cake-pastry);
+  --color-cake-praline: var(--cake-praline);
+  --color-cake-kataifi: var(--cake-kataifi);
+  --color-cake-basque-top: var(--cake-basque-top);
 }
 
-/* Dark mode waits for hi-fi. */
+/* Type, radius and shadow: defined once here; Tailwind also emits them as CSS variables. */
+@theme {
+  /* Type: Poppins display + soft accents, Roboto accent (numbers, labels), Nunito body + UI.
+     Font files are bundled from Fontsource (see layout.tsx), so they work offline. */
+  --font-display: "Poppins", system-ui, sans-serif;
+  --font-accent: "Roboto", system-ui, sans-serif;
+  --font-body: "Nunito", system-ui, sans-serif;
+  --radius-xs: 3px;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-pill: 999px;
+  --shadow-sticker: 0 1px 4px rgba(74,52,44,0.22);
+  --shadow-paper: 0 6px 16px rgba(74,52,44,0.14);
+  --shadow-polaroid: 0 6px 16px rgba(74,52,44,0.20);
+}
+
+/* Dark mode: not designed yet. */
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  background: var(--milk);
+  color: var(--espresso);
+  font-family: var(--font-body);
+}
+
+:focus-visible {
+  outline: 2px solid var(--ribbon);
+  outline-offset: 2px;
 }

@@ -1,3 +1,4 @@
+import type { CakeColor } from './cakeColors';
 // Data Model v1 — see "Cake Builder — Data Model v1" doc.
 // Stored tables: Project, Component, Layer, Recipe, Citation, BakeLog, Flavor.
 // Request, FlavorPick and Size live inside Project.
@@ -192,4 +193,5 @@ export interface Flavor {
   watchOut: string;
   origin: 'library' | 'custom';
   sources: { title: string; url: string }[];
+  color: CakeColor; // cake-* token; custom flavors borrow the closest by ingredient
 }

@@ -1,4 +1,5 @@
 import type { DessertType, Flavor, TasteProfile } from './types';
+import { flavorColor } from './cakeColors';
 
 // Seed library from "Data Model v1 → Flavor library draft", after the designer's cut. Basque moved from flavors to cheesecake styles (25 rows).
 // Taste profiles are estimates (profileIsAssumed: true) until sourced.
@@ -53,5 +54,6 @@ export const SEED_FLAVORS: Flavor[] = ROWS.map(([name, category, pairs, p, watch
     watchOut,
     origin: 'library',
     sources,
+    color: flavorColor(name, category),
   };
 });

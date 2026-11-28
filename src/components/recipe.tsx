@@ -4,6 +4,7 @@ import { createContext, useContext, useState, useSyncExternalStore, type ReactNo
 import type { Citation, Component, Size } from '@/lib/types';
 import { parseMarks } from '@/lib/citations';
 import { crossSection, rollSpiral } from '@/lib/stack';
+import { cakeColorStyle } from '@/lib/cakeColors';
 import type { UnitPref } from '@/lib/units';
 import { Button, Chip } from './ui';
 
@@ -124,12 +125,6 @@ export function CitationKey() {
 
 // ---------- cross-section ----------
 
-const FILL: Record<string, string> = {
-  frosting: '#f4f4f4', sponge: '#e2e2e2', soak: '#cfd8e3', filling: '#fff3b0', insert: '#f3c6cf',
-  crunch: '#d6c3a5', crust: '#c9b28f', base: '#efe6d6', mousse: '#f7e1d0', glaze: '#9aa5b1',
-  topping: '#ffffff', other: '#dddddd',
-};
-
 /** Roll cake cross-section: the sponge is one spiral; each filling runs alongside it, between the turns. */
 function Swirl({ components, highlight, scale }: { components: Component[]; highlight?: string; scale: number }) {
   const bands = rollSpiral(components);
@@ -152,7 +147,7 @@ function Swirl({ components, highlight, scale }: { components: Component[]; high
   const segs = parts.map((part, i) => {
     const w = i === 0 ? pitch * 0.62 : (pitch * 0.32) / fills;
     const offset = i === 0 ? 0 : pitch * 0.31 + (pitch * 0.34 * (i - 0.5)) / fills;
-    return <path key={part.componentId} d={spiral(offset)} fill="none" stroke={part.componentId === highlight ? '#262626' : FILL[part.kind]} strokeWidth={w} strokeLinecap="round" />;
+    return <path key={part.componentId} d={spiral(offset)} fill="none" stroke={part.componentId === highlight ? 'var(--ribbon)' : `var(--${part.color})`} strokeWidth={w} strokeLinecap="round" />;
   });
   const legend = [...new Map(bands.map((x) => [x.componentId, x])).values()];
   return (
@@ -163,7 +158,7 @@ function Swirl({ components, highlight, scale }: { components: Component[]; high
       <ul className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-xs">
         {legend.map((x) => (
           <li key={x.componentId} className={`flex items-center gap-1 ${x.componentId === highlight ? 'font-bold' : ''}`}>
-            <span className="inline-block h-3 w-3 border border-neutral-500" style={{ background: FILL[x.kind] }} />
+            <span className="inline-block h-3 w-3 border border-neutral-500" style={{ background: `var(--${x.color})` }} />
             {x.label}
           </li>
         ))}
@@ -183,7 +178,7 @@ export function CrossSection({ components, size, highlight, scale = 1.4, form = 
         {bands.map((b, i) => (
           <div
             key={i}
-            style={{ height: Math.round(b.height * scale), background: FILL[b.kind] }}
+            style={{ height: Math.round(b.height * scale), ...cakeColorStyle(b.color) }}
             className={`flex items-center justify-center border-b border-neutral-400 text-xs ${b.componentId === highlight ? 'font-bold outline-3 outline-offset-[-3px] outline-neutral-800' : ''}`}
           >
             {b.height * scale >= 14 ? b.label : ''}
