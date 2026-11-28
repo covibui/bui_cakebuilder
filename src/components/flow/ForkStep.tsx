@@ -1,0 +1,60 @@
+'use client';
+
+import type { Bundle } from '@/lib/repo';
+import { db } from '@/lib/db';
+import { deriveTitle, saveProject, useFlavors } from '@/lib/repo';
+import type { BuildMode, DessertType } from '@/lib/types';
+import { DESSERT_LABEL } from '@/lib/templates';
+import { Card, Chip, H1, H2 } from '@/components/ui';
+import type { StepProps } from './ProjectFlow';
+
+const MODES: { mode: BuildMode; title: string; text: string }[] = [
+  { mode: 'know', title: 'I know what I want', text: 'Pick the flavors, then the app suggests what goes inside.' },
+  { mode: 'inspire', title: 'Inspire me', text: 'Get flavor ideas from their request and popular pairings.' },
+  { mode: 'blank', title: 'Blank builder', text: 'Start from an empty cake and add every part yourself.' },
+];
+
+export default function ForkStep({ bundle, go }: { bundle: Bundle } & StepProps) {
+  const p = bundle.project;
+  const flavors = useFlavors() ?? [];
+
+  const setType = (dessertType: DessertType) => {
+    const next = { ...p, dessertType };
+    return saveProject({ ...next, title: p.titleIsCustom ? p.title : deriveTitle(next, flavors) });
+  };
+
+  const pick = async (buildMode: BuildMode) => {
+    await saveProject({ ...p, buildMode });
+    if (buildMode === 'blank') {
+      await db().components.where('projectId').equals(p.id).delete();
+      go('comp');
+    } else go('flavor');
+  };
+
+  return (
+    <section className="flex flex-col gap-6">
+      <H1>How do you want to build?</H1>
+      <div className="flex flex-col gap-2">
+        <H2>What are you making?</H2>
+        <div className="flex flex-wrap gap-2">
+          {(Object.keys(DESSERT_LABEL) as DessertType[]).map((t) => (
+            <Chip key={t} on={p.dessertType === t} onClick={() => setType(t)}>{DESSERT_LABEL[t]}</Chip>
+          ))}
+        </div>
+        {(p.dessertType === 'cheesecake' || p.dessertType === 'ice-cream-cake') && (
+          <p className="text-sm text-neutral-600">Set and freeze times for this type are still being researched. Treat timelines as rough.</p>
+        )}
+      </div>
+      <div className="grid gap-4 sm:grid-cols-3">
+        {MODES.map((m) => (
+          <button key={m.mode} type="button" onClick={() => pick(m.mode)} className="text-left">
+            <Card className={`h-full hover:border-neutral-800 ${p.buildMode === m.mode ? 'border-neutral-800' : ''}`}>
+              <p className="text-lg font-semibold">{m.title}</p>
+              <p className="mt-1 text-neutral-600">{m.text}</p>
+            </Card>
+          </button>
+        ))}
+      </div>
+    </section>
+  );
+}
