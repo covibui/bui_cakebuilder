@@ -152,7 +152,9 @@ export function buildIsoCake(bands: IsoBand[], o: IsoCakeOptions = {}): IsoCake 
       if (row.id !== o.highlight) return;
       for (const t of [tL, tR]) {
         const full = frosted && i === 0;
-        shapes.push({ d: face(t, 0, full ? R : R - coat, row.a, row.b), fill: 'none', stroke: 'var(--ribbon)', strokeWidth: 2.5 });
+        const d = face(t, 0, full ? R : R - coat, row.a, row.b);
+        shapes.push({ d, fill: 'none', stroke: 'var(--paper)', strokeWidth: 6 }); // paper gap, then ribbon, like LayerBand
+        shapes.push({ d, fill: 'none', stroke: 'var(--ribbon)', strokeWidth: 2.5 });
       }
     });
   }
@@ -228,7 +230,11 @@ export function buildIsoSlice(bands: IsoBand[], o: { width?: number; depth?: num
     const full = frosted && i === 0;
     const xr = full ? x0 + w : x0 + w - coat;
     shapes.push({ d: path([[x0, top + r.a], [xr, top + r.a], [xr, top + r.b], [x0, top + r.b]]), fill: r.fill, bandId: r.id });
-    if (o.highlight === r.id) shapes.push({ d: path([[x0, top + r.a], [xr, top + r.a], [xr, top + r.b], [x0, top + r.b]]), fill: 'none', stroke: 'var(--ribbon)', strokeWidth: 2.5 });
+    if (o.highlight === r.id) {
+      const d = path([[x0, top + r.a], [xr, top + r.a], [xr, top + r.b], [x0, top + r.b]]);
+      shapes.push({ d, fill: 'none', stroke: 'var(--paper)', strokeWidth: 6 });
+      shapes.push({ d, fill: 'none', stroke: 'var(--ribbon)', strokeWidth: 2.5 });
+    }
   });
   if (frosted) shapes.push({ d: path([[x0 + w - coat, top + rows[0].b], [x0 + w, top + rows[0].b], [x0 + w, top + H], [x0 + w - coat, top + H]]), fill: rows[0].fill });
   rows.slice(1).forEach((r) => shapes.push({ d: `M${P(x0)},${P(top + r.a)} L${P(x0 + w - coat)},${P(top + r.a)}`, fill: 'none', stroke: 'var(--espresso)', strokeWidth: 0.5, opacity: 0.25 }));
