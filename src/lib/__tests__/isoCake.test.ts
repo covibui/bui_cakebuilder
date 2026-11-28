@@ -38,9 +38,9 @@ describe('iso cake', () => {
 describe('iso cake patterns', () => {
   it('overlays each band pattern on the faces, sheared per plane', async () => {
     const { isoCakeInner } = await import('../isoCake');
-    const cake = buildIsoCake(bands.map((b, i) => ({ ...b, pattern: i === 0 ? 'gingham' : 'stripes' })), { labels: false });
+    const cake = buildIsoCake(bands.map((b, i) => ({ ...b, pattern: i === 0 ? 'dots' : 'stripes' })), { labels: false });
     const svg = isoCakeInner(cake, 't');
-    expect(svg).toContain('url(#t-gingham-top)');
+    expect(svg).toContain('url(#t-dots-top)');
     expect(svg).toContain('url(#t-stripes-left)');
     expect(svg).toContain('url(#t-stripes-right)');
     expect(svg).toContain('id="t-stripes-right"');

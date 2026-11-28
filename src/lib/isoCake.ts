@@ -14,7 +14,7 @@ export interface IsoBand {
 }
 
 /** Café Scrapbook patterns. On cake faces only: never under text. */
-export type IsoPattern = 'stripes' | 'diagonal' | 'chevron' | 'argyle' | 'gingham' | 'none';
+export type IsoPattern = 'stripes' | 'chevron' | 'dots' | 'none'; // cake builder set: busier patterns stay on decoration only
 /** Which plane a pattern lies in, so it is sheared to match the 3D face. */
 export type IsoPlane = 'left' | 'right' | 'side' | 'top' | 'front' | 'sliceTop' | 'sliceSide';
 
@@ -205,12 +205,11 @@ export function isoPatternDefs(prefix: string, tilt: number): string {
     left: `skewY(${-a})`, right: `skewY(${a})`, side: '', top: `scale(1 ${tilt})`, front: '',
     sliceTop: 'matrix(1 0 0.87 -0.5 0 0)', sliceSide: 'matrix(0.87 -0.5 0 1 0 0)',
   };
+  // Muted on purpose: patterns hint at texture, the layer colors carry the meaning.
   const tiles: Record<Exclude<IsoPattern, 'none'>, { w: number; h: number; body: string; rot?: number }> = {
-    stripes: { w: 10, h: 10, body: '<rect width="5" height="10" fill="#fff" opacity=".4"/>' },
-    diagonal: { w: 10, h: 10, rot: 45, body: '<rect width="5" height="10" fill="#fff" opacity=".4"/>' },
-    chevron: { w: 12, h: 9, body: '<path d="M0,7 L6,2 L12,7" fill="none" stroke="#fff" stroke-width="2.4" opacity=".55"/>' },
-    argyle: { w: 16, h: 22, body: '<path d="M8,0 L16,11 L8,22 L0,11Z" fill="#fff" opacity=".3"/><path d="M0,0 L16,22 M16,0 L0,22" stroke="#fff" stroke-width=".8" opacity=".6"/>' },
-    gingham: { w: 12, h: 12, body: '<rect width="6" height="12" fill="#fff" opacity=".28"/><rect width="12" height="6" fill="#fff" opacity=".28"/>' },
+    stripes: { w: 10, h: 10, body: '<rect width="4" height="10" fill="#fff" opacity=".2"/>' },
+    chevron: { w: 12, h: 9, body: '<path d="M0,7 L6,2 L12,7" fill="none" stroke="#fff" stroke-width="1.8" opacity=".3"/>' },
+    dots: { w: 10, h: 10, body: '<circle cx="2.5" cy="2.5" r="1.4" fill="#fff" opacity=".35"/><circle cx="7.5" cy="7.5" r="1.4" fill="#fff" opacity=".35"/>' },
   };
   let out = '';
   for (const [plane, tf] of Object.entries(planes)) {

@@ -179,14 +179,13 @@ function IsoSvg({ cake, title }: { cake: IsoCake; title: string }) {
   );
 }
 
-/** Café Scrapbook pattern per layer: frosting gingham, sponge stripes, fruit diagonal, cream chevron, crust argyle. Thin layers stay solid. */
+/** Café Scrapbook pattern per layer (cake builder set): sponge stripes, cream chevron, fruit and crust dots; frosting and thin layers solid. */
 function patternFor(b: Band, i: number): IsoPattern {
-  if (b.height < 8) return 'none';
-  if (i === 0 && b.kind === 'frosting') return 'gingham';
+  if (b.height < 8 || (i === 0 && b.kind === 'frosting') || b.kind === 'frosting' || b.kind === 'glaze') return 'none';
   if (b.kind === 'sponge') return 'stripes';
-  if (b.kind === 'crust' || b.kind === 'crunch') return 'argyle';
+  if (b.kind === 'crust' || b.kind === 'crunch') return 'dots';
   const group = CAKE_COLORS[b.color].group;
-  return group === 'fruit' ? 'diagonal' : group === 'sponge' ? 'stripes' : group === 'crust' ? 'argyle' : 'chevron';
+  return group === 'fruit' || group === 'crust' ? 'dots' : group === 'sponge' ? 'stripes' : 'chevron';
 }
 
 /** Round cake in 3D with the front quarter cut away, or one slice. Layers carry their cake colors. */
