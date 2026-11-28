@@ -42,6 +42,8 @@ export interface Project {
   dessertType: DessertType;
   status: ProjectStatus;
   buildMode: BuildMode;
+  /** Cheesecake style; drives water bath, set and chill rules. Unset = baked. */
+  variant?: 'baked' | 'no-bake' | 'basque';
   request: Request;
   flavors: FlavorPick;
   size: Size;

@@ -41,8 +41,15 @@ export default function ForkStep({ bundle, go }: { bundle: Bundle } & StepProps)
             <Chip key={t} on={p.dessertType === t} onClick={() => setType(t)}>{DESSERT_LABEL[t]}</Chip>
           ))}
         </div>
-        {(p.dessertType === 'cheesecake' || p.dessertType === 'ice-cream-cake') && (
-          <p className="text-sm text-neutral-600">Set and freeze times for this type are still being researched. Treat timelines as rough.</p>
+        {p.dessertType === 'cheesecake' && (
+          <div className="flex flex-col gap-2">
+            <H2>What style?</H2>
+            <div className="flex flex-wrap gap-2">
+              {([['baked', 'Baked (New York)'], ['no-bake', 'No-bake'], ['basque', 'Basque (burnt)']] as const).map(([v, l]) => (
+                <Chip key={v} on={(p.variant ?? 'baked') === v} onClick={() => saveProject({ ...p, variant: v })}>{l}</Chip>
+              ))}
+            </div>
+          </div>
         )}
       </div>
       <div className="grid gap-4 sm:grid-cols-3">

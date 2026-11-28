@@ -57,3 +57,35 @@ describe('bake log', () => {
     expect(out.summary).toHaveLength(2);
   });
 });
+
+import { bakeTimeline } from '../plan';
+import { processTasks, processTips } from '../processRules';
+import { buildPrompt } from '../handoff';
+import type { Project } from '../types';
+
+describe('cheesecake and ice cream cake rules', () => {
+  const base: Project = {
+    id: 'p', title: 't', titleIsCustom: false, dessertType: 'cheesecake', status: 'planning', buildMode: 'know',
+    request: { forWho: '', occasion: '', date: '', servings: 12, words: '' }, flavors: { primary: null, pairings: [], custom: [] },
+    size: { shape: 'round', tiers: [{ sizeIn: 9, layers: 1 }], justEnough: true }, createdAt: 0, updatedAt: 0,
+  };
+  it('baked cheesecake cools in the oven and chills overnight, all sourced', () => {
+    const tasks = processTasks(base);
+    expect(tasks.map((t) => t.text).join(' ')).toMatch(/door cracked.*overnight/);
+    expect(tasks.every((t) => t.source.url.startsWith('https://'))).toBe(true);
+  });
+  it('no-bake and Basque get their own rules', () => {
+    expect(processTasks({ ...base, variant: 'no-bake' })[0].text).toMatch(/6 hours/);
+    expect(processTips({ ...base, variant: 'basque' })[0].text).toMatch(/No crust/);
+    expect(componentTemplates('cheesecake', 'Lemon', '', 'basque').find((t) => t.kind === 'crust')!.included).toBe(false);
+  });
+  it('ice cream cake freezes 12 hours and comes out 10 minutes early', () => {
+    const t = bakeTimeline({ ...base, dessertType: 'ice-cream-cake' }, []);
+    const all = t.flatMap((d) => d.tasks.map((x) => x.text)).join(' | ');
+    expect(all).toMatch(/at least 12 hours/);
+    expect(t.at(-1)!.tasks.map((x) => x.text)).toContain('Take it out about 10 minutes before serving');
+  });
+  it('puts the rules in the Claude prompt', () => {
+    expect(buildPrompt({ ...base, variant: 'baked' }, [], [])).toMatch(/water bath/);
+  });
+});

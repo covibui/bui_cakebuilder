@@ -1,6 +1,6 @@
 import type { DessertType, Flavor, TasteProfile } from './types';
 
-// Seed library from "Data Model v1 → Flavor library draft", after the designer's cut (26 rows).
+// Seed library from "Data Model v1 → Flavor library draft", after the designer's cut. Basque moved from flavors to cheesecake styles (25 rows).
 // Taste profiles are estimates (profileIsAssumed: true) until sourced.
 
 const PAPERLUST = { title: 'Paperlust: Wedding Cake Flavors 2026', url: 'https://paperlust.co/blog/wedding-cake-flavors/' };
@@ -32,10 +32,9 @@ const ROWS: Row[] = [
   ['Gingerbread', 'cake', 'Lemon glaze, Cream cheese', [3, 0, 0, 1, 0], 'Winter only', [PAPERLUST]],
   ['White chocolate macadamia', 'cake', 'Blond chocolate, Praline, Feuilletine', [5, 1, 0, 0, 0], 'Cookie to cake; from your last build', []],
   ['Cookies and creme', 'cake', 'Chocolate, Vanilla', [4, 0, 0, 2, 0], 'Cookie to cake; from your discovery answers', []],
-  ['New York (plain)', 'cheesecake', 'Strawberry, Cherry, Sour cream topping', [3, 1, 2, 0, 0], '', [GOLDBELLY]],
+  ['Plain (classic)', 'cheesecake', 'Strawberry, Cherry, Sour cream topping', [3, 1, 2, 0, 0], '', [GOLDBELLY]],
   ['Key lime', 'cheesecake', 'Graham crust, Whipped cream', [3, 0, 4, 0, 0], '', [EDIBLE]],
   ['White chocolate raspberry', 'cheesecake', 'Raspberry swirl', [5, 0, 2, 0, 0], 'Can run very sweet', [EDIBLE]],
-  ['Basque (burnt)', 'cheesecake', 'Crustless; fruit or caramel on the side', [3, 1, 1, 2, 0], '', [GOLDBELLY]],
   ['Lemon', 'tart', 'Meringue, Berries', [2, 0, 5, 0, 0], '', []],
   ['Chocolate ganache', 'tart', 'Salted caramel, Raspberry, Sea salt', [3, 1, 0, 3, 0], '', []],
 ];

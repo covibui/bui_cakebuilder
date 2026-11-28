@@ -1,5 +1,6 @@
 import type { Component, Ingredient, Project, Recipe } from './types';
 import { roundAmount, scaleFactor } from './scaling';
+import { assemblyText, processTasks } from './processRules';
 
 export interface ScaledIngredient extends Ingredient {
   scaled: number;
@@ -71,7 +72,7 @@ export function shoppingList(plans: ComponentPlan[]): ShoppingItem[] {
 export interface TimelineDay {
   offset: number; // 0 = serving day
   label: string;
-  tasks: { componentId: string | null; text: string }[];
+  tasks: { componentId: string | null; text: string; sourceUrl?: string }[];
 }
 
 export function dayLabel(offset: number, servingDate?: string): string {
@@ -83,13 +84,15 @@ export function dayLabel(offset: number, servingDate?: string): string {
 /** Group components by make-ahead day; assembly is always last on serving day. */
 export function bakeTimeline(project: Project, components: Component[]): TimelineDay[] {
   const included = components.filter((c) => c.included);
-  const offsets = [...new Set([...included.map((c) => c.makeAheadDay), 0])].sort((a, b) => a - b);
+  const rules = processTasks(project);
+  const offsets = [...new Set([...included.map((c) => c.makeAheadDay), ...rules.map((r) => r.offset), 0])].sort((a, b) => a - b);
   return offsets.map((offset) => ({
     offset,
     label: dayLabel(offset, project.request.date || undefined),
     tasks: [
       ...included.filter((c) => c.makeAheadDay === offset).map((c) => ({ componentId: c.id, text: `Make the ${c.name.toLowerCase()}` })),
-      ...(offset === 0 ? [{ componentId: null, text: 'Assemble and chill' }] : []),
+      ...rules.filter((r) => r.offset === offset).map((r) => ({ componentId: null, text: r.text, sourceUrl: r.source.url })),
+      ...(offset === 0 ? [{ componentId: null, text: assemblyText(project) }] : []),
     ],
   }));
 }

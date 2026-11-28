@@ -58,7 +58,7 @@ export async function resetComponents(p: Project, flavors: Flavor[]) {
   const pairing = (p.flavors.pairings[0] && byId.get(p.flavors.pairings[0])) || custom[0] || '';
   const words = p.request.words.toLowerCase();
   const mentioned = pairing && words.includes(pairing.toLowerCase().split(' ')[0].replace(/(ies|y|s)$/, ''));
-  const comps: Component[] = componentTemplates(p.dessertType, primary, pairing).map((t) => ({
+  const comps: Component[] = componentTemplates(p.dessertType, primary, pairing, p.variant).map((t) => ({
     ...t,
     // A pairing they asked for turns the insert on (v6: "From request").
     ...(t.kind === 'insert' && mentioned ? { included: true, tag: 'from-request' as const, why: `From “${p.request.words}”` } : {}),
