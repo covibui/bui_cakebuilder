@@ -1,6 +1,16 @@
 import type { BasePan, IngredientUnit, Shape, Size, Tier } from './types';
 
 const SHEET_AREA = 9 * 13;
+const JELLY_ROLL_AREA = 10 * 15;
+
+/**
+ * Tube and Bundt pans are deep, so area alone undercounts them. They are sized as
+ * round-layer equivalents instead: a 10 in Bundt holds about the batter of two 9 in
+ * layers (Handle the Heat: both make 72 mini cupcakes). A 10 in tube (16 cups) is
+ * taken as 16/12 of a 10 in Bundt (12 cups); that ratio is an assumption.
+ */
+const roundArea = (d: number) => Math.PI * (d / 2) ** 2;
+const bundtArea = (d: number) => 2 * roundArea(d * 0.9);
 
 export function panArea(shape: Shape, sizeIn: number): number {
   switch (shape) {
@@ -8,11 +18,18 @@ export function panArea(shape: Shape, sizeIn: number): number {
       return sizeIn * sizeIn;
     case 'sheet':
       return SHEET_AREA;
+    case 'jelly-roll':
+      return JELLY_ROLL_AREA;
+    case 'bundt':
+      return bundtArea(sizeIn);
+    case 'tube':
+      return bundtArea(sizeIn) * (16 / 12);
     case 'cupcake':
       return Math.PI * (2.5 / 2) ** 2 * sizeIn; // sizeIn = cupcake count for this shape
     case 'round':
     case 'oval': // v1 treats oval like round of the same width
     case 'dome':
+    case 'ring': // entremet ring or mold
     default:
       return Math.PI * (sizeIn / 2) ** 2;
   }

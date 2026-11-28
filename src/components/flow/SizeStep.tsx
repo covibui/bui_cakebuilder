@@ -4,10 +4,18 @@ import type { Bundle } from '@/lib/repo';
 import { saveProject } from '@/lib/repo';
 import { suggestTiers } from '@/lib/scaling';
 import type { Shape, Size } from '@/lib/types';
+import { isSinglePan } from '@/lib/styles';
 import { Button, Card, Chip, Field, H1, H2, Input } from '@/components/ui';
 import type { StepProps } from './ProjectFlow';
 
-const SHAPES: [Shape, string][] = [['round', 'Round'], ['square', 'Square'], ['sheet', 'Sheet (9×13)'], ['oval', 'Oval'], ['dome', 'Dome'], ['cupcake', 'Cupcakes']];
+const SHAPES: [Shape, string][] = [
+  ['round', 'Round'], ['square', 'Square'], ['sheet', 'Sheet (9×13)'], ['oval', 'Oval'], ['dome', 'Dome'], ['cupcake', 'Cupcakes'],
+  ['ring', 'Entremet ring'], ['bundt', 'Bundt'], ['tube', 'Tube'], ['jelly-roll', 'Jelly roll (10×15)'],
+];
+
+const SINGLE: Partial<Record<Shape, { sizeIn: number; layers: number }>> = {
+  sheet: { sizeIn: 13, layers: 1 }, 'jelly-roll': { sizeIn: 15, layers: 1 }, bundt: { sizeIn: 10, layers: 1 }, tube: { sizeIn: 10, layers: 1 },
+};
 
 export default function SizeStep({ bundle, go }: { bundle: Bundle } & StepProps) {
   const p = bundle.project;
@@ -30,12 +38,18 @@ export default function SizeStep({ bundle, go }: { bundle: Bundle } & StepProps)
         <H2>Shape</H2>
         <div className="flex flex-wrap gap-2">
           {SHAPES.map(([s, l]) => (
-            <Chip key={s} on={p.size.shape === s} onClick={() => setSize({ shape: s, tiers: s === 'sheet' ? [{ sizeIn: 13, layers: 1 }] : s === 'cupcake' ? [{ sizeIn: p.request.servings ?? 12, layers: 1 }] : tiers })}>{l}</Chip>
+            <Chip key={s} on={p.size.shape === s} onClick={() => setSize({ shape: s, tiers: SINGLE[s] ? [SINGLE[s]!] : s === 'cupcake' ? [{ sizeIn: p.request.servings ?? 12, layers: 1 }] : s === 'ring' ? [{ sizeIn: 7, layers: 1 }] : tiers })}>{l}</Chip>
           ))}
         </div>
       </div>
 
-      {p.size.shape !== 'sheet' && (
+      {isSinglePan(p.size.shape) && p.size.shape !== 'sheet' && p.size.shape !== 'jelly-roll' && (
+        <Field label="Pan diameter (in)">
+          <Input type="number" min={6} className="w-24" value={tiers[0]?.sizeIn ?? 10} onChange={(e) => setSize({ tiers: [{ sizeIn: Number(e.target.value), layers: 1 }] })} />
+        </Field>
+      )}
+
+      {!isSinglePan(p.size.shape) && (
         <div className="flex flex-col gap-2">
           <H2>{cupcake ? 'How many' : 'Tiers, top to bottom'}</H2>
           {tiers.map((t, i) => (

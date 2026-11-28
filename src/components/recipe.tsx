@@ -3,7 +3,7 @@
 import { createContext, useContext, useState, useSyncExternalStore, type ReactNode } from 'react';
 import type { Citation, Component, Size } from '@/lib/types';
 import { parseMarks } from '@/lib/citations';
-import { crossSection } from '@/lib/stack';
+import { crossSection, rollSpiral } from '@/lib/stack';
 import type { UnitPref } from '@/lib/units';
 import { Button, Chip } from './ui';
 
@@ -126,10 +126,55 @@ export function CitationKey() {
 
 const FILL: Record<string, string> = {
   frosting: '#f4f4f4', sponge: '#e2e2e2', soak: '#cfd8e3', filling: '#fff3b0', insert: '#f3c6cf',
-  crunch: '#d6c3a5', crust: '#c9b28f', base: '#efe6d6', other: '#dddddd',
+  crunch: '#d6c3a5', crust: '#c9b28f', base: '#efe6d6', mousse: '#f7e1d0', glaze: '#9aa5b1',
+  topping: '#ffffff', other: '#dddddd',
 };
 
-export function CrossSection({ components, size, highlight, scale = 1.4 }: { components: Component[]; size: Size; highlight?: string; scale?: number }) {
+/** Roll cake cross-section: the sponge is one spiral; each filling runs alongside it, between the turns. */
+function Swirl({ components, highlight, scale }: { components: Component[]; highlight?: string; scale: number }) {
+  const bands = rollSpiral(components);
+  if (!bands.length) return <p className="text-neutral-600">Turn on a sponge to see the swirl.</p>;
+  const size = 220 * scale;
+  const c = size / 2;
+  const total = 3 * 2 * Math.PI; // three turns
+  const pitch = (c - 14) / 3.4; // radial gap between turns
+  const b = pitch / (2 * Math.PI);
+  const parts = [...new Map(bands.map((x) => [x.componentId, x])).values()]; // sponge first, then fillings
+  const fills = parts.length - 1;
+  const spiral = (offset: number) => {
+    const steps = 240;
+    return Array.from({ length: steps + 1 }, (_, k) => {
+      const th = (total * k) / steps;
+      const r = 4 + b * th + offset;
+      return `${k ? 'L' : 'M'}${(c + r * Math.cos(th)).toFixed(1)},${(c + r * Math.sin(th)).toFixed(1)}`;
+    }).join(' ');
+  };
+  const segs = parts.map((part, i) => {
+    const w = i === 0 ? pitch * 0.62 : (pitch * 0.32) / fills;
+    const offset = i === 0 ? 0 : pitch * 0.31 + (pitch * 0.34 * (i - 0.5)) / fills;
+    return <path key={part.componentId} d={spiral(offset)} fill="none" stroke={part.componentId === highlight ? '#262626' : FILL[part.kind]} strokeWidth={w} strokeLinecap="round" />;
+  });
+  const legend = [...new Map(bands.map((x) => [x.componentId, x])).values()];
+  return (
+    <figure className="w-full max-w-xs" aria-label="Cross-section of the roll, a swirl">
+      <svg viewBox={`0 0 ${size} ${size}`} className="w-full rounded-full border-2 border-neutral-800 bg-neutral-50">
+        {segs}
+      </svg>
+      <ul className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-xs">
+        {legend.map((x) => (
+          <li key={x.componentId} className={`flex items-center gap-1 ${x.componentId === highlight ? 'font-bold' : ''}`}>
+            <span className="inline-block h-3 w-3 border border-neutral-500" style={{ background: FILL[x.kind] }} />
+            {x.label}
+          </li>
+        ))}
+      </ul>
+      <figcaption className="mt-1 text-sm text-neutral-600">Cross-section of the roll</figcaption>
+    </figure>
+  );
+}
+
+export function CrossSection({ components, size, highlight, scale = 1.4, form = 'stack' }: { components: Component[]; size: Size; highlight?: string; scale?: number; form?: 'stack' | 'swirl' }) {
+  if (form === 'swirl') return <Swirl components={components} highlight={highlight} scale={Math.min(scale, 1.4) / 1.4} />;
   const bands = crossSection(components, size);
   if (!bands.length) return <p className="text-neutral-600">Turn on a component to see the cross-section.</p>;
   return (

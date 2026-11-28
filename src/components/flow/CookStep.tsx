@@ -7,6 +7,7 @@ import { bakeTimeline, planComponents } from '@/lib/plan';
 import { displayAmount } from '@/lib/units';
 import type { Step as RecipeStep } from '@/lib/types';
 import { Button, Card, Chip, H1, H2, Note } from '@/components/ui';
+import { sectionForm } from '@/lib/styles';
 import { CitationProvider, CitedText, CrossSection, UnitToggle, useUnitPref } from '@/components/recipe';
 import type { StepProps } from './ProjectFlow';
 
@@ -116,7 +117,7 @@ export default function CookStep({ bundle, go }: { bundle: Bundle } & StepProps)
         )}
 
         <div className="grid gap-6 md:grid-cols-[minmax(0,14rem)_1fr]">
-          <CrossSection components={bundle.components} size={p.size} highlight={view === 'walk' ? cur.componentId ?? undefined : open ?? undefined} scale={1.1} />
+          <CrossSection components={bundle.components} size={p.size} form={sectionForm(p)} highlight={view === 'walk' ? cur.componentId ?? undefined : open ?? undefined} scale={1.1} />
 
           {view === 'card' ? (
             <div className="flex flex-col gap-3">

@@ -8,6 +8,7 @@ import type { LinkedRecipe } from './recipeLink';
 import { parseIngredientLine } from './ingredientLine';
 import { applyBakeLog } from './bakeLog';
 import { componentTemplates } from './templates';
+import { cakeStyle } from './styles';
 import { suggestTiers } from './scaling';
 
 export function blankProject(): Project {
@@ -45,7 +46,10 @@ export function deriveTitle(p: Project, flavors: Flavor[]): string {
   const byId = new Map(flavors.map((f) => [f.id, f.name]));
   const names = [p.flavors.primary, ...p.flavors.pairings].filter(Boolean).map((id) => byId.get(id!) ?? '').filter(Boolean);
   const all = [...names, ...p.flavors.custom];
-  const kind = { cake: 'cake', cheesecake: 'cheesecake', tart: 'tart', 'ice-cream-cake': 'ice cream cake' }[p.dessertType];
+  const style = cakeStyle(p);
+  const kind = style && style !== 'layer'
+    ? { entremet: 'entremet', cupcake: 'cupcakes', bundt: 'Bundt cake', chiffon: 'chiffon cake', 'angel-food': 'angel food cake', roll: 'roll cake' }[style]
+    : { cake: 'cake', cheesecake: 'cheesecake', tart: 'tart', 'ice-cream-cake': 'ice cream cake' }[p.dessertType];
   return all.length ? `${all.join(' ')} ${kind}` : `New ${kind}`;
 }
 

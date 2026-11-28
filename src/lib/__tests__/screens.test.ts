@@ -89,3 +89,82 @@ describe('cheesecake and ice cream cake rules', () => {
     expect(buildPrompt({ ...base, variant: 'baked' }, [], [])).toMatch(/water bath/);
   });
 });
+
+import { panArea, scaleFactor } from '../scaling';
+import { defaultSize, sectionForm, styleOf } from '../styles';
+import { assemblyText } from '../processRules';
+import { componentGaps } from '../plan';
+import { rollSpiral } from '../stack';
+
+describe('cake styles and tarts (pies, tarts & other cakes research)', () => {
+  const base: Project = {
+    id: 'p', title: 't', titleIsCustom: false, dessertType: 'cake', status: 'planning', buildMode: 'know',
+    request: { forWho: '', occasion: '', date: '', servings: 12, words: '' },
+    flavors: { primary: null, pairings: [], custom: [] },
+    size: { shape: 'round', tiers: [{ sizeIn: 8, layers: 3 }], justEnough: true }, createdAt: 0, updatedAt: 0,
+  };
+  const styles = ['entremet', 'cupcake', 'bundt', 'chiffon', 'angel-food', 'roll'] as const;
+
+  it('unset cake style is a layer cake; a cheesecake style does not leak into a cake', () => {
+    expect(styleOf(base)).toBe('layer');
+    expect(styleOf({ ...base, variant: 'basque' })).toBe('layer');
+    expect(styleOf({ ...base, dessertType: 'tart' })).toBe('set');
+  });
+
+  it('every cake style has its own pan, components and sourced tips', () => {
+    for (const s of styles) {
+      const p = { ...base, variant: s };
+      expect(defaultSize(s, 12).shape).not.toBe('round');
+      expect(componentTemplates('cake', 'Lemon', 'Raspberry', s).length).toBeGreaterThan(1);
+      const tips = processTips(p);
+      expect(tips.length).toBeGreaterThan(0);
+      for (const t of [...tips, ...processTasks(p)]) expect(t.source.url).toMatch(/^https:\/\//);
+      expect(assemblyText(p)).not.toBe('Assemble and chill');
+    }
+  });
+
+  it('entremet plans three days ahead and glazes the day before', () => {
+    const p = { ...base, variant: 'entremet' as const };
+    const tpl = componentTemplates('cake', 'Mango', 'Passion fruit', 'entremet').map((t, i) => comp({ ...t, id: String(i) }));
+    const days = bakeTimeline(p, tpl).map((d) => d.offset);
+    expect(days[0]).toBe(-3);
+    expect(processTasks(p).find((t) => t.offset === -1)!.text).toMatch(/90–94°F/);
+    const bands = crossSection(tpl, p.size).map((b) => b.kind);
+    expect(bands[0]).toBe('glaze');
+    expect(bands.indexOf('insert')).toBeGreaterThan(bands.indexOf('mousse'));
+    expect(bands.lastIndexOf('mousse')).toBeGreaterThan(bands.indexOf('insert'));
+  });
+
+  it('roll cakes draw as a swirl of sponge and filling', () => {
+    const p = { ...base, variant: 'roll' as const };
+    expect(sectionForm(p)).toBe('swirl');
+    expect(sectionForm(base)).toBe('stack');
+    const tpl = componentTemplates('cake', 'Matcha', 'Strawberry', 'roll').map((t, i) => comp({ ...t, id: String(i) }));
+    expect(rollSpiral(tpl).map((b) => b.kind)).toEqual(['sponge', 'filling', 'sponge', 'filling', 'sponge', 'filling']);
+  });
+
+  it('cupcakes scale by count: two 8 in layers make 18–24 (Handle the Heat)', () => {
+    const cupcakes = (2 * panArea('round', 8)) / panArea('cupcake', 1);
+    expect(cupcakes).toBeGreaterThanOrEqual(18);
+    expect(cupcakes).toBeLessThanOrEqual(24);
+  });
+
+  it('a 10 in Bundt holds about two 9 in layers', () => {
+    expect(scaleFactor({ shape: 'round', sizeIn: 9, layers: 2 }, { shape: 'bundt', tiers: [{ sizeIn: 10, layers: 1 }], justEnough: true })).toBeCloseTo(1, 1);
+  });
+
+  it('only layer cakes get the dry-sponge warning', () => {
+    const sponge = [comp({ kind: 'sponge', id: 's' })];
+    expect(componentGaps(base, sponge).length).toBe(1);
+    expect(componentGaps({ ...base, variant: 'bundt' }, sponge).length).toBe(0);
+  });
+
+  it('tarts: set filling goes in a baked shell; baked filling bakes with it', () => {
+    const set = { ...base, dessertType: 'tart' as const };
+    const baked = { ...set, variant: 'baked' as const };
+    expect(processTasks(set)[0].text).toMatch(/Freeze the shell/);
+    expect(processTips(set)[0].text).toMatch(/Blind bake at 350°F/);
+    expect(processTips(baked)[0].text).toMatch(/pre-cook/);
+    expect(componentTemplates('tart', 'Almond', 'Apricot', 'baked').map((t) => t.name)).toContain('Almond frangipane');
+  });
+});

@@ -7,6 +7,7 @@ import { displayAmount } from '@/lib/units';
 import { DESSERT_LABEL } from '@/lib/templates';
 import { processTips } from '@/lib/processRules';
 import { Button, Card, Chip, H1, H2, Note } from '@/components/ui';
+import { sectionForm } from '@/lib/styles';
 import { CitationKey, CitationProvider, CitedText, CrossSection, UnitToggle, useUnitPref } from '@/components/recipe';
 import { HandoffPanel, RecipeSource } from '@/components/sources';
 import type { StepProps } from './ProjectFlow';
@@ -24,7 +25,7 @@ export default function BuildStep({ bundle, go }: { bundle: Bundle } & StepProps
   const days = bakeTimeline(p, bundle.components);
   const missing = included.filter((c) => !c.recipeId);
   const tips = processTips(p);
-  const pans = p.size.shape === 'sheet' ? '9×13 in sheet' : p.size.tiers.map((t) => (p.size.shape === 'cupcake' ? `${t.sizeIn} cupcakes` : `${t.sizeIn} in ${p.size.shape} × ${t.layers}`)).join(' + ');
+  const pans = p.size.shape === 'sheet' ? '9×13 in sheet' : p.size.shape === 'jelly-roll' ? '10×15 in jelly roll pan' : p.size.shape === 'bundt' || p.size.shape === 'tube' ? `${p.size.tiers[0]?.sizeIn ?? 10} in ${p.size.shape} pan` : p.size.tiers.map((t) => (p.size.shape === 'cupcake' ? `${t.sizeIn} cupcakes` : `${t.sizeIn} in ${p.size.shape} × ${t.layers}`)).join(' + ');
 
   return (
     <CitationProvider>
@@ -39,7 +40,7 @@ export default function BuildStep({ bundle, go }: { bundle: Bundle } & StepProps
 
         <div className="grid gap-6 md:grid-cols-[minmax(0,18rem)_1fr]">
           <aside className="flex flex-col gap-3">
-            <CrossSection components={bundle.components} size={p.size} />
+            <CrossSection components={bundle.components} size={p.size} form={sectionForm(p)} />
             <Button onClick={() => go('comp')}>Edit what’s inside</Button>
             <Button onClick={() => go('size')}>Edit size</Button>
           </aside>
