@@ -36,7 +36,8 @@ export interface IsoLabel {
   at: [number, number];
 }
 
-const EDGE = { stroke: 'var(--paper)', strokeWidth: 1.5, strokeOpacity: 0.55 }; // soft white edge // white edge on every surface: bubbly, sticker-like
+const EDGE = { stroke: 'var(--paper)', strokeWidth: 1.5, strokeOpacity: 0.55 }; // soft white edge
+const RIM = { stroke: 'var(--paper)', strokeWidth: 2.2, strokeOpacity: 0.95 }; // white line on the cake's outer edges // white edge on every surface: bubbly, sticker-like
 
 export interface IsoCakeOptions {
   radius?: number; // px
@@ -197,6 +198,15 @@ export function buildIsoCake(bands: IsoBand[], o: IsoCakeOptions = {}): IsoCake 
   const seamTop = top + (frosted ? rows[0].b : 0); // the center line stops at the frosting
   shapes.push({ d: `M${P(cx)},${P(seamTop)} L${P(cx)},${P(bottom)}`, fill: 'none', ...EDGE });
 
+  // Edge highlights (designer's markup, 2026-11-28): white lines on the outer edges of the cake,
+  // where two surfaces meet: the front rim of the top, the top of the cut, and the cut corners.
+  const line = (pts: [number, number][]) => shapes.push({ d: 'M' + pts.map(([x, y]) => `${P(x)},${P(y)}`).join(' L'), fill: 'none', ...RIM });
+  line(arc(tL, 180, R, top));
+  line(arc(0, tR, R, top));
+  line([rim(tL, R, top), [cx, top], rim(tR, R, top)]);
+  line([rim(tL, R, top), rim(tL, R, bottom)]);
+  line([rim(tR, R, top), rim(tR, R, bottom)]);
+
   // Labels: one per component, pointing at its first layer on the right face.
   if (withLabels) {
     const seen = new Set<string>();
@@ -246,7 +256,7 @@ export function isoCakeInner(cake: IsoCake, prefix = 'iso'): string {
   const shapes = cake.shapes
     .map((x) => {
       const fill = x.pattern ? `url(#${prefix}-${x.pattern.type}-${x.pattern.plane})` : x.fill;
-      return `<path d="${x.d}" fill="${fill}"${x.opacity != null ? ` opacity="${x.opacity}"` : ''}${x.stroke ? ` stroke="${x.stroke}" stroke-width="${x.strokeWidth ?? 1}"${x.strokeOpacity != null ? ` stroke-opacity="${x.strokeOpacity}"` : ''} stroke-linejoin="round"` : ''}/>`;
+      return `<path d="${x.d}" fill="${fill}"${x.opacity != null ? ` opacity="${x.opacity}"` : ''}${x.stroke ? ` stroke="${x.stroke}" stroke-width="${x.strokeWidth ?? 1}"${x.strokeOpacity != null ? ` stroke-opacity="${x.strokeOpacity}"` : ''} stroke-linejoin="round" stroke-linecap="round"` : ''}/>`;
     })
     .join('');
   // Label tape: espresso strip, milk caps (Roboto Medium), a small tilt, dashed leader.
@@ -324,6 +334,11 @@ export function buildIsoSlice(bands: IsoBand[], o: { width?: number; depth?: num
     shapes.push({ d: cd, fill: rows[0].fill });
     overlay(cd, rows[0].pattern, 'front');
   }
+
+  // Edge highlights: top-front edge, the outer corner, and the top of the side.
+  const line = (pts: [number, number][]) => shapes.push({ d: 'M' + pts.map(([x, y]) => `${P(x)},${P(y)}`).join(' L'), fill: 'none', ...RIM });
+  line([[x0, top], [x0 + w, top], [x0 + w + dx, top - dy]]);
+  line([[x0 + w, top], [x0 + w, top + H]]);
 
   if (withLabels) {
     const seen = new Set<string>();
