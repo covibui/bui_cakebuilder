@@ -34,3 +34,19 @@ describe('iso cake', () => {
     expect(sectionForm({ dessertType: 'cake', size: { shape: 'square' } })).toBe('stack');
   });
 });
+
+describe('iso cake patterns', () => {
+  it('overlays each band pattern on the faces, sheared per plane', async () => {
+    const { isoCakeInner } = await import('../isoCake');
+    const cake = buildIsoCake(bands.map((b, i) => ({ ...b, pattern: i === 0 ? 'gingham' : 'stripes' })), { labels: false });
+    const svg = isoCakeInner(cake, 't');
+    expect(svg).toContain('url(#t-gingham-top)');
+    expect(svg).toContain('url(#t-stripes-left)');
+    expect(svg).toContain('url(#t-stripes-right)');
+    expect(svg).toContain('id="t-stripes-right"');
+  });
+  it('draws no pattern for solid layers', () => {
+    const cake = buildIsoCake(bands.map((b) => ({ ...b, pattern: 'none' as const })), { labels: false });
+    expect(cake.shapes.some((s) => s.pattern)).toBe(false);
+  });
+});

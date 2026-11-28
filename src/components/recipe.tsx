@@ -1,11 +1,12 @@
 'use client';
 
-import { createContext, useContext, useState, useSyncExternalStore, type ReactNode } from 'react';
+import { createContext, useContext, useId, useState, useSyncExternalStore, type ReactNode } from 'react';
 import type { Citation, Component, Size } from '@/lib/types';
 import { parseMarks } from '@/lib/citations';
 import { crossSection, rollSpiral } from '@/lib/stack';
-import { cakeColorStyle } from '@/lib/cakeColors';
-import { buildIsoCake, buildIsoSlice, type IsoBand, type IsoCake } from '@/lib/isoCake';
+import { CAKE_COLORS, cakeColorStyle } from '@/lib/cakeColors';
+import { buildIsoCake, buildIsoSlice, isoCakeInner, type IsoBand, type IsoCake, type IsoPattern } from '@/lib/isoCake';
+import type { Band } from '@/lib/stack';
 import type { UnitPref } from '@/lib/units';
 import { Button, Chip } from './ui';
 
@@ -170,20 +171,22 @@ function Swirl({ components, highlight, scale }: { components: Component[]; high
 }
 
 function IsoSvg({ cake, title }: { cake: IsoCake; title: string }) {
+  const prefix = 'iso' + useId().replace(/[^a-zA-Z0-9]/g, '');
+  const w = cake.width + (cake.labels.length ? 60 : 0);
   return (
-    <svg viewBox={`0 0 ${cake.width} ${cake.height}`} className="h-auto w-full" role="img" aria-label={title}>
-      {cake.shapes.map((x, i) => (
-        <path key={i} d={x.d} fill={x.fill} opacity={x.opacity} stroke={x.stroke} strokeWidth={x.strokeWidth} strokeLinejoin="round" />
-      ))}
-      {cake.labels.map(({ id, text, anchor: [ax, ay], at: [x, y] }) => (
-        <g key={id}>
-          <circle cx={ax} cy={ay} r={2.5} fill="var(--espresso)" />
-          <path d={`M${ax},${ay} L${x - 22},${y} L${x - 6},${y}`} fill="none" stroke="var(--espresso)" strokeWidth={1} />
-          <text x={x} y={y + 4} fontFamily="var(--font-body)" fontSize={12} fontWeight={700} fill="var(--espresso)">{text}</text>
-        </g>
-      ))}
-    </svg>
+    <svg viewBox={`0 0 ${w} ${cake.height}`} className="h-auto w-full" role="img" aria-label={title}
+      dangerouslySetInnerHTML={{ __html: isoCakeInner(cake, prefix) }} />
   );
+}
+
+/** Café Scrapbook pattern per layer: frosting gingham, sponge stripes, fruit diagonal, cream chevron, crust argyle. Thin layers stay solid. */
+function patternFor(b: Band, i: number): IsoPattern {
+  if (b.height < 8) return 'none';
+  if (i === 0 && b.kind === 'frosting') return 'gingham';
+  if (b.kind === 'sponge') return 'stripes';
+  if (b.kind === 'crust' || b.kind === 'crunch') return 'argyle';
+  const group = CAKE_COLORS[b.color].group;
+  return group === 'fruit' ? 'diagonal' : group === 'sponge' ? 'stripes' : group === 'crust' ? 'argyle' : 'chevron';
 }
 
 /** Round cake in 3D with the front quarter cut away, or one slice. Layers carry their cake colors. */
@@ -192,7 +195,7 @@ function IsoCrossSection({ components, size, highlight, labels }: { components: 
   const bands = crossSection(components, size);
   if (!bands.length) return <p className="text-neutral-600">Turn on a component to see the cross-section.</p>;
   const iso: IsoBand[] = bands.map((b, i) => ({
-    id: b.componentId, label: b.label, height: b.height, fill: `var(--${b.color})`, isFrosting: i === 0 && b.kind === 'frosting',
+    id: b.componentId, label: b.label, height: b.height, fill: `var(--${b.color})`, isFrosting: i === 0 && b.kind === 'frosting', pattern: patternFor(b, i),
   }));
   const cake = view === 'cake' ? buildIsoCake(iso, { labels, highlight }) : buildIsoSlice(iso, { labels, highlight });
   const legend = [...new Map(bands.map((x) => [x.componentId, x])).values()];

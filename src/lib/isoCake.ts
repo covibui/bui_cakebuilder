@@ -10,7 +10,13 @@ export interface IsoBand {
   height: number; // relative thickness
   fill: string; // CSS color, e.g. var(--cake-raspberry)
   isFrosting?: boolean;
+  pattern?: IsoPattern; // scrapbook texture drawn in white over the fill
 }
+
+/** Café Scrapbook patterns. On cake faces only: never under text. */
+export type IsoPattern = 'stripes' | 'diagonal' | 'chevron' | 'argyle' | 'gingham' | 'none';
+/** Which plane a pattern lies in, so it is sheared to match the 3D face. */
+export type IsoPlane = 'left' | 'right' | 'side' | 'top' | 'front' | 'sliceTop' | 'sliceSide';
 
 export interface IsoShape {
   d: string;
@@ -19,6 +25,7 @@ export interface IsoShape {
   stroke?: string;
   strokeWidth?: number;
   bandId?: string;
+  pattern?: { type: IsoPattern; plane: IsoPlane };
 }
 
 export interface IsoLabel {
@@ -40,6 +47,7 @@ export interface IsoCakeOptions {
 export interface IsoCake {
   width: number;
   height: number;
+  tilt: number;
   shapes: IsoShape[];
   labels: IsoLabel[];
 }
@@ -88,6 +96,9 @@ export function buildIsoCake(bands: IsoBand[], o: IsoCakeOptions = {}): IsoCake 
   const frosted = rows.length > 0 && !!rows[0].isFrosting;
   const coat = frosted ? Math.min(10, Math.max(4, rows[0].b - rows[0].a)) : 0;
   const coatFill = frosted ? rows[0].fill : '';
+  const overlay = (d: string, type: IsoPattern | undefined, plane: IsoPlane) => {
+    if (type && type !== 'none') shapes.push({ d, fill: 'none', pattern: { type, plane } });
+  };
 
   // Plate and shadow.
   const plate = (r: number, y: number) => path(arc(0, 360, r, y));
@@ -105,24 +116,21 @@ export function buildIsoCake(bands: IsoBand[], o: IsoCakeOptions = {}): IsoCake 
     if (t2 <= t1) continue;
     if (frosted) {
       shapes.push({ d: side(t1, t2, 0, H), fill: coatFill });
+      overlay(side(t1, t2, 0, H), rows[0].pattern, 'side');
     } else {
-      rows.forEach((row) => shapes.push({ d: side(t1, t2, row.a, row.b), fill: row.fill }));
+      rows.forEach((row) => {
+        shapes.push({ d: side(t1, t2, row.a, row.b), fill: row.fill });
+        overlay(side(t1, t2, row.a, row.b), row.pattern, 'side');
+      });
     }
-    // Roundness: darker toward the edges of the visible side.
-    const steps = 6;
-    for (let i = 0; i < steps; i++) {
-      const s1 = t1 + ((t2 - t1) * i) / steps;
-      const s2 = t1 + ((t2 - t1) * (i + 1)) / steps;
-      const mid = (s1 + s2) / 2;
-      const shade = Math.abs(Math.cos(rad(mid))) * 0.16;
-      shapes.push({ d: side(s1, s2, 0, H), fill: 'var(--espresso)', opacity: P(shade * 100) / 100 });
-    }
+    // Flat shading: one tone per side (left lit, right in shade).
+    shapes.push({ d: side(t1, t2, 0, H), fill: 'var(--espresso)', opacity: t1 < 90 ? 0.16 : 0.06 });
   }
-
   // Top surface: the full disc minus the cut wedge.
   const topFill = rows[0]?.fill ?? 'var(--cake-vanilla)';
-  shapes.push({ d: path([[cx, top], ...arc(tL, tR + 360, R, top)]), fill: topFill });
-  shapes.push({ d: path([[cx, top], ...arc(tL, tR + 360, R, top)]), fill: 'var(--paper)', opacity: 0.1 });
+  const topD = path([[cx, top], ...arc(tL, tR + 360, R, top)]);
+  shapes.push({ d: topD, fill: topFill });
+  overlay(topD, rows[0]?.pattern, 'top');
 
   // Cut faces: strips from the center line out to the rim.
   const face = (t: number, r0: number, r1: number, a: number, b: number) => {
@@ -133,11 +141,18 @@ export function buildIsoCake(bands: IsoBand[], o: IsoCakeOptions = {}): IsoCake 
     [tL, 0],
     [tR, 0.1],
   ] as [number, number][]) {
+    const plane: IsoPlane = t === tL ? 'left' : 'right';
     rows.forEach((row, i) => {
       const full = frosted && i === 0; // top frosting runs to the rim
-      shapes.push({ d: face(t, 0, full ? R : R - coat, row.a, row.b), fill: row.fill, bandId: row.id });
+      const d = face(t, 0, full ? R : R - coat, row.a, row.b);
+      shapes.push({ d, fill: row.fill, bandId: row.id });
+      overlay(d, row.pattern, plane);
     });
-    if (frosted) shapes.push({ d: face(t, R - coat, R, rows[0].b, H), fill: coatFill, bandId: rows[0].id });
+    if (frosted) {
+      const d = face(t, R - coat, R, rows[0].b, H);
+      shapes.push({ d, fill: coatFill, bandId: rows[0].id });
+      overlay(d, rows[0].pattern, plane);
+    }
     if (dark) shapes.push({ d: face(t, 0, R, 0, H), fill: 'var(--espresso)', opacity: dark });
     // Thin seams between layers.
     rows.slice(1).forEach((row) => {
@@ -178,18 +193,59 @@ export function buildIsoCake(bands: IsoBand[], o: IsoCakeOptions = {}): IsoCake 
     });
   }
 
-  return { width: Math.ceil(width), height: Math.ceil(Math.max(height, (labels.at(-1)?.at[1] ?? 0) + pad)), shapes, labels };
+  return { width: Math.ceil(width), height: Math.ceil(Math.max(height, (labels.at(-1)?.at[1] ?? 0) + pad)), tilt: k, shapes, labels };
 }
 
-/** SVG markup, for static previews. */
-export function isoCakeSvg(cake: IsoCake, title = 'Cake cross-section'): string {
-  const s = cake.shapes
-    .map((x) => `<path d="${x.d}" fill="${x.fill}"${x.opacity != null ? ` opacity="${x.opacity}"` : ''}${x.stroke ? ` stroke="${x.stroke}" stroke-width="${x.strokeWidth ?? 1}" stroke-linejoin="round"` : ''}/>`)
+const esc = (t: string) => t.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
+
+/** Pattern tiles (white over the layer color), sheared per plane so they sit on the 3D faces. */
+export function isoPatternDefs(prefix: string, tilt: number): string {
+  const a = (Math.atan(tilt) * 180) / Math.PI;
+  const planes: Record<IsoPlane, string> = {
+    left: `skewY(${-a})`, right: `skewY(${a})`, side: '', top: `scale(1 ${tilt})`, front: '',
+    sliceTop: 'matrix(1 0 0.87 -0.5 0 0)', sliceSide: 'matrix(0.87 -0.5 0 1 0 0)',
+  };
+  const tiles: Record<Exclude<IsoPattern, 'none'>, { w: number; h: number; body: string; rot?: number }> = {
+    stripes: { w: 10, h: 10, body: '<rect width="5" height="10" fill="#fff" opacity=".4"/>' },
+    diagonal: { w: 10, h: 10, rot: 45, body: '<rect width="5" height="10" fill="#fff" opacity=".4"/>' },
+    chevron: { w: 12, h: 9, body: '<path d="M0,7 L6,2 L12,7" fill="none" stroke="#fff" stroke-width="2.4" opacity=".55"/>' },
+    argyle: { w: 16, h: 22, body: '<path d="M8,0 L16,11 L8,22 L0,11Z" fill="#fff" opacity=".3"/><path d="M0,0 L16,22 M16,0 L0,22" stroke="#fff" stroke-width=".8" opacity=".6"/>' },
+    gingham: { w: 12, h: 12, body: '<rect width="6" height="12" fill="#fff" opacity=".28"/><rect width="12" height="6" fill="#fff" opacity=".28"/>' },
+  };
+  let out = '';
+  for (const [plane, tf] of Object.entries(planes)) {
+    for (const [type, t] of Object.entries(tiles)) {
+      const transform = [tf, t.rot ? `rotate(${t.rot})` : ''].filter(Boolean).join(' ');
+      out += `<pattern id="${prefix}-${type}-${plane}" width="${t.w}" height="${t.h}" patternUnits="userSpaceOnUse"${transform ? ` patternTransform="${transform}"` : ''}>${t.body}</pattern>`;
+    }
+  }
+  return out;
+}
+
+/** Inner SVG markup (defs, shapes, label-maker labels). One renderer for the app and the design system. */
+export function isoCakeInner(cake: IsoCake, prefix = 'iso'): string {
+  const shapes = cake.shapes
+    .map((x) => {
+      const fill = x.pattern ? `url(#${prefix}-${x.pattern.type}-${x.pattern.plane})` : x.fill;
+      return `<path d="${x.d}" fill="${fill}"${x.opacity != null ? ` opacity="${x.opacity}"` : ''}${x.stroke ? ` stroke="${x.stroke}" stroke-width="${x.strokeWidth ?? 1}" stroke-linejoin="round"` : ''}/>`;
+    })
     .join('');
-  const l = cake.labels
-    .map(({ text, anchor: [ax, ay], at: [x, y] }) => `<circle cx="${P(ax)}" cy="${P(ay)}" r="2.5" fill="var(--espresso)"/><path d="M${P(ax)},${P(ay)} L${P(x - 22)},${P(y)} L${P(x - 6)},${P(y)}" fill="none" stroke="var(--espresso)" stroke-width="1"/><text x="${P(x)}" y="${P(y + 4)}" font-family="var(--font-body)" font-size="12" font-weight="700" fill="var(--espresso)">${text.replace(/&/g, '&amp;').replace(/</g, '&lt;')}</text>`)
+  // Label tape: espresso strip, milk caps (Roboto Medium), a small tilt, dashed leader.
+  const labels = cake.labels
+    .map(({ text, anchor: [ax, ay], at: [x, y] }, i) => {
+      const t = text.toUpperCase();
+      const w = Math.round(t.length * 7.6 + 18);
+      const tilt = i % 2 ? 0.8 : -1;
+      return `<path d="M${P(ax)},${P(ay)} L${P(x - 20)},${P(y)} L${P(x - 4)},${P(y)}" fill="none" stroke="var(--espresso)" stroke-width="1" stroke-dasharray="3 3"/><circle cx="${P(ax)}" cy="${P(ay)}" r="3" fill="var(--paper)" stroke="var(--espresso)" stroke-width="1.2"/><g transform="rotate(${tilt} ${P(x)} ${P(y)})"><rect x="${P(x)}" y="${P(y - 9)}" width="${w}" height="18" rx="3" fill="var(--espresso)"/><rect x="${P(x)}" y="${P(y + 7)}" width="${w}" height="2" rx="1" fill="#000" opacity=".25"/><text x="${P(x + 8)}" y="${P(y + 3.5)}" font-family="var(--font-accent)" font-size="10" font-weight="500" letter-spacing="1.2" fill="var(--milk)">${esc(t)}</text></g>`;
+    })
     .join('');
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${cake.width} ${cake.height}" width="${cake.width}" height="${cake.height}" role="img" aria-label="${title}">${s}${l}</svg>`;
+  return `<defs>${isoPatternDefs(prefix, cake.tilt)}</defs>${shapes}${labels}`;
+}
+
+/** Full SVG, for static previews. */
+export function isoCakeSvg(cake: IsoCake, title = 'Cake cross-section', prefix = 'iso'): string {
+  const extra = cake.labels.length ? 60 : 0; // room for label tape text
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${cake.width + extra} ${cake.height}" width="${cake.width + extra}" height="${cake.height}" role="img" aria-label="${esc(title)}">${isoCakeInner(cake, prefix)}</svg>`;
 }
 
 /**
@@ -219,24 +275,34 @@ export function buildIsoSlice(bands: IsoBand[], o: { width?: number; depth?: num
   shapes.push({ d: path([[x0 + 6, top + H + 4], [x0 + w + 6, top + H + 4], [x0 + w + dx + 6, top + H + 4 - dy], [x0 + dx + 6, top + H + 4 - dy]]), fill: 'var(--espresso)', opacity: 0.08 });
   // Outer end (right side): frosting coat, or the layers if naked.
   const sideStrip = (a: number, b: number) => path([[x0 + w, top + a], [x0 + w + dx, top + a - dy], [x0 + w + dx, top + b - dy], [x0 + w, top + b]]);
-  if (frosted) shapes.push({ d: sideStrip(0, H), fill: rows[0].fill });
-  else rows.forEach((r) => shapes.push({ d: sideStrip(r.a, r.b), fill: r.fill }));
+  const overlay = (d: string, type: IsoPattern | undefined, plane: IsoPlane) => {
+    if (type && type !== 'none') shapes.push({ d, fill: 'none', pattern: { type, plane } });
+  };
+  if (frosted) { shapes.push({ d: sideStrip(0, H), fill: rows[0].fill }); overlay(sideStrip(0, H), rows[0].pattern, 'sliceSide'); }
+  else rows.forEach((r) => { shapes.push({ d: sideStrip(r.a, r.b), fill: r.fill }); overlay(sideStrip(r.a, r.b), r.pattern, 'sliceSide'); });
   shapes.push({ d: sideStrip(0, H), fill: 'var(--espresso)', opacity: 0.14 });
   // Top
-  shapes.push({ d: path([[x0, top], [x0 + w, top], [x0 + w + dx, top - dy], [x0 + dx, top - dy]]), fill: rows[0]?.fill ?? 'var(--cake-vanilla)' });
-  shapes.push({ d: path([[x0, top], [x0 + w, top], [x0 + w + dx, top - dy], [x0 + dx, top - dy]]), fill: 'var(--paper)', opacity: 0.1 });
+  const sliceTop = path([[x0, top], [x0 + w, top], [x0 + w + dx, top - dy], [x0 + dx, top - dy]]);
+  shapes.push({ d: sliceTop, fill: rows[0]?.fill ?? 'var(--cake-vanilla)' });
+  overlay(sliceTop, rows[0]?.pattern, 'sliceTop');
   // Front face: layers, with the frosting coat at the outer (right) end.
   rows.forEach((r, i) => {
     const full = frosted && i === 0;
     const xr = full ? x0 + w : x0 + w - coat;
-    shapes.push({ d: path([[x0, top + r.a], [xr, top + r.a], [xr, top + r.b], [x0, top + r.b]]), fill: r.fill, bandId: r.id });
+    const fd = path([[x0, top + r.a], [xr, top + r.a], [xr, top + r.b], [x0, top + r.b]]);
+    shapes.push({ d: fd, fill: r.fill, bandId: r.id });
+    overlay(fd, r.pattern, 'front');
     if (o.highlight === r.id) {
       const d = path([[x0, top + r.a], [xr, top + r.a], [xr, top + r.b], [x0, top + r.b]]);
       shapes.push({ d, fill: 'none', stroke: 'var(--paper)', strokeWidth: 6 });
       shapes.push({ d, fill: 'none', stroke: 'var(--ribbon)', strokeWidth: 2.5 });
     }
   });
-  if (frosted) shapes.push({ d: path([[x0 + w - coat, top + rows[0].b], [x0 + w, top + rows[0].b], [x0 + w, top + H], [x0 + w - coat, top + H]]), fill: rows[0].fill });
+  if (frosted) {
+    const cd = path([[x0 + w - coat, top + rows[0].b], [x0 + w, top + rows[0].b], [x0 + w, top + H], [x0 + w - coat, top + H]]);
+    shapes.push({ d: cd, fill: rows[0].fill });
+    overlay(cd, rows[0].pattern, 'front');
+  }
   rows.slice(1).forEach((r) => shapes.push({ d: `M${P(x0)},${P(top + r.a)} L${P(x0 + w - coat)},${P(top + r.a)}`, fill: 'none', stroke: 'var(--espresso)', strokeWidth: 0.5, opacity: 0.25 }));
 
   if (withLabels) {
@@ -254,5 +320,5 @@ export function buildIsoSlice(bands: IsoBand[], o: { width?: number; depth?: num
   }
   const width = x0 + w + dx + (withLabels ? 200 : pad);
   const height = Math.max(top + H + pad + 6, (labels.at(-1)?.at[1] ?? 0) + pad);
-  return { width: Math.ceil(width), height: Math.ceil(height), shapes, labels };
+  return { width: Math.ceil(width), height: Math.ceil(height), tilt: 0.5, shapes, labels };
 }
