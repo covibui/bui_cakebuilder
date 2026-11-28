@@ -69,6 +69,8 @@ export function isSinglePan(shape: Shape): boolean {
 }
 
 /** How the cross-section is drawn: a stack of bands, or a swirl for roll cakes. */
-export function sectionForm(p: Pick<Project, 'dessertType' | 'variant'>): 'stack' | 'swirl' {
-  return cakeStyle(p) === 'roll' ? 'swirl' : 'stack';
+/** How to draw the cross-section: roll cakes swirl, round cakes get the 3D cut cake, other shapes stay flat. */
+export function sectionForm(p: Pick<Project, 'dessertType' | 'variant'> & { size?: Pick<Project['size'], 'shape'> }): 'stack' | 'swirl' | 'iso' {
+  if (cakeStyle(p) === 'roll') return 'swirl';
+  return p.size?.shape === 'round' ? 'iso' : 'stack';
 }

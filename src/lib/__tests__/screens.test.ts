@@ -138,7 +138,7 @@ describe('cake styles and tarts (pies, tarts & other cakes research)', () => {
   it('roll cakes draw as a swirl of sponge and filling', () => {
     const p = { ...base, variant: 'roll' as const };
     expect(sectionForm(p)).toBe('swirl');
-    expect(sectionForm(base)).toBe('stack');
+    expect(sectionForm(base)).toBe(base.size?.shape === 'round' ? 'iso' : 'stack'); // round cakes draw in 3D (2026-11-28)
     const tpl = componentTemplates('cake', 'Matcha', 'Strawberry', 'roll').map((t, i) => comp({ ...t, id: String(i) }));
     expect(rollSpiral(tpl).map((b) => b.kind)).toEqual(['sponge', 'filling', 'sponge', 'filling', 'sponge', 'filling']);
   });
